@@ -299,7 +299,7 @@ spec:
             syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
 
             echo "## Show the content of the sbom file"
-            cat sbom-image.json
+            cat sbom-image.json | jq -r '.'
 
             REMOTESSHEOF
             chmod +x scripts/script-build.sh
