@@ -183,6 +183,7 @@ job:
         
         echo "## Install syft"
         curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+        mv bin/syft ${USER_BIN_DIR}/syft
         syft --version
         
         echo "## Running syft on the image filesystem"
