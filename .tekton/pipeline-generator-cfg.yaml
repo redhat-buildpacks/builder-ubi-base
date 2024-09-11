@@ -1,0 +1,218 @@
+# The type will be used by the application to generate the resources for the selected provider: konflux, tekton
+type: konflux
+domain: remote-build
+namespace: cmoullia-tenant
+
+repository:
+  url: https://github.com/redhat-buildpacks/builder-ubi-base
+
+# To generate the Application and/or Component CR
+application:
+  name: buildpack-remote
+  enable: false
+component:
+  name: builder-ubi-base
+  enable: false
+
+job:
+  resourceType: PipelineRun
+  name: builder-ubi-base
+  description: PipelineRun using the pack cli to build the builder image remotely
+  timeout: "0h15m0s"
+
+  params:
+    # Konflux param
+    - output-image: quay.io/redhat-user-workloads/cmoullia-tenant/konflux-demo/buildpack-remote:{{revision}}
+
+  actions:
+    - name: pack
+      runAfter: prefetch-dependencies # TODO: IS there a better way to set such a value : default or not
+      image: quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275
+      params:
+        # Konflux
+        - PLATFORM: linux-mlarge/amd64 # linux-root/amd64 # We need it in order to configure the multi-arch-platform controller properly - see: https://github.com/redhat-appstudio/infra-deployments/blob/main/components/multi-platform-controller/production/host-config.yaml
+        # Image to use to execute remotely the SSH script using podman run
+        - BUILDER_IMAGE: quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275
+        # Buildpack
+        - PACK_CLI_VERSION: "v0.35.1"
+        - GO_VERSION: "1.23.0"
+        - BUILD_ARGS:
+            - "-v"
+      workspaces:
+        - name: source
+          workspace: workspace
+
+      results:
+        - IMAGE_URL: "Image repository where the built image was pushed"
+        - IMAGE_DIGEST: "Digest of the image just built"
+        - BASE_IMAGES_DIGESTS: "Digests of the base images used for build"
+
+      # env var ar not injected within the tekton's pod running the script
+      envs:
+        - BUILDER_IMAGE: $(params.BUILDER_IMAGE)
+        - PLATFORM: $(params.PLATFORM)
+        - IMAGE: $(params.output-image)
+        - PACK_CLI_VERSION: $(params.PACK_CLI_VERSION)
+        - GO_VERSION: $(params.GO_VERSION)
+
+      args:
+        - $(params.BUILD_ARGS[*])
+
+      #scriptFileUrl: https://raw.githubusercontent.com/ch007m/pipeline-dsl-builder/main/scripts/ssh-remote.sh
+      volumes:
+        - name: ssh
+          mountPath: /ssh
+          # readOnly: true ==> The default value is true
+          secret: "multi-platform-ssh-$(context.taskRun.name)"
+        - name: shared
+          mountPath: /shared
+          readOnly: false
+          emptyDir: "{}"
+
+      script: |
+        #!/usr/bin/env bash
+        set -eu
+        set -o pipefail
+        
+        mkdir -p ~/.ssh
+        if [ -e "/ssh/error" ]; then
+          #no server could be provisioned
+          cat /ssh/error
+        exit 1
+        elif [ -e "/ssh/otp" ]; then
+          curl --cacert /ssh/otp-ca -XPOST -d @/ssh/otp $(cat /ssh/otp-server) >~/.ssh/id_rsa
+          echo "" >> ~/.ssh/id_rsa
+        else
+          cp /ssh/id_rsa ~/.ssh
+        fi
+        chmod 0400 ~/.ssh/id_rsa
+
+        export SSH_HOST=$(cat /ssh/host)
+        export BUILD_DIR=$(cat /ssh/user-dir)
+        export SSH_ARGS="-o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
+        
+        # Export the args to be passed to the script
+        export BUILD_ARGS="$@"
+        
+        mkdir -p scripts
+        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
+        
+        echo "rsync shared folders ..."
+        rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
+        rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
+        
+        cat >scripts/script-build.sh <<'REMOTESSHEOF'
+        #!/bin/sh
+        
+        TEMP_DIR="$HOME/tmp"
+        USER_BIN_DIR="$HOME/bin"
+        BUILDPACK_PROJECTS="$HOME/buildpack-repo"
+ 
+        mkdir -p ${TEMP_DIR}
+        mkdir -p ${USER_BIN_DIR}
+        mkdir -p ${BUILDPACK_PROJECTS}
+        mkdir -p ${HOME}/shared
+ 
+        export PATH=$PATH:${USER_BIN_DIR}
+ 
+        echo "### Podman info ###"
+        podman version
+
+        echo "## Start podman.socket ##"
+        systemctl --user start podman.socket
+        systemctl status podman.socket
+ 
+        curl -sSL "https://github.com/buildpacks/pack/releases/download/${PACK_CLI_VERSION}/pack-${PACK_CLI_VERSION}-linux.tgz" | tar -C ${TEMP_DIR} --no-same-owner -xzv pack
+        mv ${TEMP_DIR}/pack ${USER_BIN_DIR}
+ 
+        echo "### Pack version ###"
+        pack --version
+        pack config experimental true
+ 
+        echo "### Go version ###"
+        curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C ${TEMP_DIR} -xz go
+        mkdir -p ${USER_BIN_DIR}/go
+        mv ${TEMP_DIR}/go ${USER_BIN_DIR}
+        chmod +x ${USER_BIN_DIR}/go
+  
+        mkdir -p $HOME/workspace
+        export GOPATH=$HOME/workspace
+        export GOROOT=${USER_BIN_DIR}/go
+        export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+        go version
+
+        echo "### Build the builder image using pack"
+        curl -sSL https://github.com/paketo-community/builder-ubi-base/tarball/main | tar -xz -C ${TEMP_DIR}
+        mv ${TEMP_DIR}/paketo-community-builder-ubi-base-* ${BUILDPACK_PROJECTS}/builder-ubi-base
+        cd ${BUILDPACK_PROJECTS}/builder-ubi-base
+
+        for build_arg in "${BUILD_ARGS[@]}"; do
+          PACK_ARGS+=" $build_arg"
+        done
+
+        echo "## Start :: Echo args to be passed to pack"
+        echo $PACK_ARGS
+        echo "## End :: Echo args to be passed to pack"
+
+        export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+        echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
+        pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
+
+        podman unshare
+        container=$(podman create ${IMAGE})
+        echo "Container: $container"
+
+        podman mount $container | tee ${HOME}/shared/container_path
+
+        # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
+        find $(cat ${HOME}/shared/container_path) -xtype l -delete
+        
+        echo "## Path of the filesystem mounted"
+        cat ${HOME}/shared/container_path
+
+        echo $container > ${HOME}/shared/container_name
+
+        podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
+        echo "## List konflux-final-image"
+        ls -la konflux-final-image
+
+        echo "## List ${HOME}/shared/container_path"
+        ls -la $(cat ${HOME}/shared/container_path)
+
+        echo "## Show ${HOME}/shared/container_name"
+        cat ${HOME}/shared/container_name
+
+        REMOTESSHEOF
+        chmod +x scripts/script-build.sh
+
+        rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
+        rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
+
+        ssh $SSH_ARGS "$SSH_HOST" \
+          "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" \
+           scripts/script-build.sh
+
+        echo -n "URL of the image build is : quarkus-hello:1.0" | tee "$(results.IMAGE_URL.path)"
+        echo -n "sha256ddddddddddddddddddddd" | tee "$(results.IMAGE_DIGEST.path)"
+        echo -n "sha256eeeeeeeeeeeeeeeeeeeeee" | tee "$(results.BASE_IMAGES_DIGESTS.path)"
+
+        rsync -ra "$SSH_HOST:$BUILD_DIR/shared/" /shared/
+        rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
+        
+        echo "## Install syft"
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+        syft --version
+        
+        echo "## Running syft on the image filesystem"
+        ls -la /shared
+        syft -vv dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
+        
+        echo "## Show the content of the sbom file"
+        cat sbom-image.json
+        
+
+        
+        
+        
+
+
