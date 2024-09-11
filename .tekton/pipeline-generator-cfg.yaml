@@ -22,7 +22,7 @@ job:
 
   params:
     # Konflux param
-    - output-image: quay.io/redhat-user-workloads/cmoullia-tenant/konflux-demo/buildpack-remote:{{revision}}
+    - output-image: quay.io/redhat-user-workloads/cmoullia-tenant/buildpack-remote/builder-ubi-base:{{revision}}
 
   actions:
     - name: pack

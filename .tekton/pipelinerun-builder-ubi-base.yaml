@@ -32,7 +32,7 @@ spec:
   - name: "prefetch-input"
     value: ""
   - name: "output-image"
-    value: "quay.io/redhat-user-workloads/cmoullia-tenant/konflux-demo/buildpack-remote:{{revision}}"
+    value: "quay.io/redhat-user-workloads/cmoullia-tenant/buildpack-remote/builder-ubi-base:{{revision}}"
   pipelineSpec:
     finally:
     - name: "show-sbom"
