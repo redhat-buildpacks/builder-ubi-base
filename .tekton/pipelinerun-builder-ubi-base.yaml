@@ -201,9 +201,10 @@ spec:
             export BUILD_DIR=$(cat /ssh/user-dir)
             export SSH_ARGS="-o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
 
-            mkdir -p scripts
+            # Export the args to be passed to the script
+            export BUILD_ARGS="$@"
 
-            echo "$BUILD_DIR"
+            mkdir -p scripts
             ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
 
             echo "rsync shared folders ..."
@@ -305,6 +306,16 @@ spec:
 
             rsync -ra "$SSH_HOST:$BUILD_DIR/shared/" /shared/
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
+
+            echo "## Install syft"
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+            syft --version
+
+            echo "Running syft on the image filesystem"
+            syft dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
+
+            echo "## Show the content of the sbom file"
+            cat sbom-image.json
           volumeMounts:
           - mountPath: "/ssh"
             name: "ssh"
