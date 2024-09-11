@@ -268,15 +268,17 @@ spec:
             echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
             pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
 
+            podman unshare
             container=$(podman create ${IMAGE})
             echo "Container: $container"
 
-            touch ${HOME}/shared/container_path
-            podman unshare
             podman mount $container | tee ${HOME}/shared/container_path
 
             # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
             find $(cat ${HOME}/shared/container_path) -xtype l -delete
+
+            echo "## Path of the filesystem mounted"
+            cat ${HOME}/shared/container_path
 
             echo $container > ${HOME}/shared/container_name
 
@@ -285,7 +287,7 @@ spec:
             ls -la konflux-final-image
 
             echo "## List ${HOME}/shared/container_path"
-            ls -la ${HOME}/shared/container_path
+            ls -la $(cat ${HOME}/shared/container_path)
 
             echo "## Show ${HOME}/shared/container_name"
             cat ${HOME}/shared/container_name
