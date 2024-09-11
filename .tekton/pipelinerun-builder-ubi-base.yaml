@@ -15,7 +15,7 @@ metadata:
     appstudio.openshift.io/component: "builder-ubi-base"
     pipelines.openshift.io/used-by: "build-cloud"
     pipelines.openshift.io/runtime: "java"
-  name: "buildpack-remote"
+  name: "builder-ubi-base"
   namespace: "cmoullia-tenant"
 spec:
   params:
