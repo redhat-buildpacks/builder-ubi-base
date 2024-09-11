@@ -315,7 +315,7 @@ spec:
 
             echo "## Running syft on the image filesystem"
             ls -la /shared
-            syft -vv dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
+            syft -v scan dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
 
             echo "## Show the content of the sbom file"
             cat sbom-image.json
