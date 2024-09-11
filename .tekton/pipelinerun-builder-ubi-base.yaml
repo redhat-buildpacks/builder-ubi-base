@@ -311,8 +311,9 @@ spec:
             curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
             syft --version
 
-            echo "Running syft on the image filesystem"
-            syft dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
+            echo "## Running syft on the image filesystem"
+            ls -la /shared
+            syft -vv dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
 
             echo "## Show the content of the sbom file"
             cat sbom-image.json
