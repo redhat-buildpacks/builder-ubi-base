@@ -161,7 +161,7 @@ job:
         container=$(podman create ${IMAGE})
         echo "## Container created: $container from image: ${IMAGE}"
         
-        podman unshare sh -c 'podman mount $container; tee ${HOME}/shared/container_path; podman unmount $container'
+        podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
 
         echo "## Path of the filesystem extracted from the image"
         cat ${HOME}/shared/container_path
