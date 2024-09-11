@@ -201,11 +201,11 @@ job:
           "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" \
            scripts/script-build.sh
         
-        echo -n "URL of the image build is : quarkus-hello:1.0" | tee "$(results.IMAGE_URL.path)"
+        echo -n "URL of the image build is: $IMAGE" | tee "$(results.IMAGE_URL.path)"
         echo -n "sha256ddddddddddddddddddddd" | tee "$(results.IMAGE_DIGEST.path)"
         echo -n "sha256eeeeeeeeeeeeeeeeeeeeee" | tee "$(results.BASE_IMAGES_DIGESTS.path)"
         
-        rsync -ra "$SSH_HOST:$BUILD_DIR/shared/" /shared/
+        rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
         
 
