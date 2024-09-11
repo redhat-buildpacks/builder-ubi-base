@@ -281,16 +281,25 @@ spec:
             cat ${HOME}/shared/container_path
 
             echo $container > ${HOME}/shared/container_name
+            echo "## Print ${HOME}/shared/container_name"
+            cat ${HOME}/shared/container_name
 
             podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
             echo "## List konflux-final-image"
             ls -la konflux-final-image
 
-            echo "## List ${HOME}/shared/container_path"
-            ls -la $(cat ${HOME}/shared/container_path)
+            #echo "## List ${HOME}/shared/container_path"
+            #ls -la $(cat ${HOME}/shared/container_path)
 
-            echo "## Show ${HOME}/shared/container_name"
-            cat ${HOME}/shared/container_name
+            echo "## Install syft"
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+            syft --version
+
+            echo "## Running syft on the image filesystem"
+            syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
+
+            echo "## Show the content of the sbom file"
+            cat sbom-image.json
 
             REMOTESSHEOF
             chmod +x scripts/script-build.sh
@@ -308,17 +317,6 @@ spec:
 
             rsync -ra "$SSH_HOST:$BUILD_DIR/shared/" /shared/
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
-
-            echo "## Install syft"
-            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
-            syft --version
-
-            echo "## Running syft on the image filesystem"
-            ls -la /shared
-            syft -v scan dir:$(cat /shared/container_path) --output cyclonedx-json=sbom-image.json
-
-            echo "## Show the content of the sbom file"
-            cat sbom-image.json
           volumeMounts:
           - mountPath: "/ssh"
             name: "ssh"
