@@ -208,7 +208,7 @@ spec:
             ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
 
             echo "rsync shared folders ..."
-            rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
+            rsync -ra "/shared/" "$SSH_HOST:$HOME/shared/"
             rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
             cat >scripts/script-build.sh <<'REMOTESSHEOF'
@@ -306,7 +306,7 @@ spec:
             echo -n "sha256ddddddddddddddddddddd" | tee "$(results.IMAGE_DIGEST.path)"
             echo -n "sha256eeeeeeeeeeeeeeeeeeeeee" | tee "$(results.BASE_IMAGES_DIGESTS.path)"
 
-            rsync -ra "$SSH_HOST:$BUILD_DIR/shared/" /shared/
+            rsync -ra "$SSH_HOST:${HOME}/shared/" /shared/
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
 
             echo "## Install syft"
