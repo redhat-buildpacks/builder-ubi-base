@@ -95,11 +95,11 @@ job:
         export BUILD_ARGS="$@"
         
         mkdir -p scripts
-        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes" "$HOME/shared/"
+        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes" # "$HOME/shared/"
         
         echo "## rsync shared folders ..."
         echo "TODO: Check how we can rsync the shared folder containing image's content  used to generate a sbom
-        rsync -ra "/shared/" "$SSH_HOST:$HOME/shared/"
+        # rsync -ra "/shared/" "$SSH_HOST:$HOME/shared/"
         rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
         
         cat >scripts/script-build.sh <<'REMOTESSHEOF'
