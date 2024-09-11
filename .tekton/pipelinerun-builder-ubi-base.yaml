@@ -268,17 +268,16 @@ spec:
             echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
             pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
 
-            podman unshare
             container=$(podman create ${IMAGE})
-            echo "Container: $container"
+            echo "## Container created: $container from image: ${IMAGE}"
 
-            podman mount $container | tee ${HOME}/shared/container_path
+            podman unshare sh -c 'podman mount $container; tee ${HOME}/shared/container_path; podman unmount $container'
+
+            echo "## Path of the filesystem extracted from the image"
+            cat ${HOME}/shared/container_path
 
             # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
             find $(cat ${HOME}/shared/container_path) -xtype l -delete
-
-            echo "## Path of the filesystem mounted"
-            cat ${HOME}/shared/container_path
 
             echo $container > ${HOME}/shared/container_name
             echo "## Print ${HOME}/shared/container_name"
