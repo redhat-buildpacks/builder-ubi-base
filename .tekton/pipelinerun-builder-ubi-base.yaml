@@ -223,7 +223,7 @@ spec:
             \n\n#echo \"### List konflux-final-image\"\n#ls -la konflux-final-image\n\
             \necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\n\
             echo \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
-            \ volumes/workdir/\"\npwd\nls -la\nls -la volumes\nls -la volumes/workdir\n\
+            \ volumes/workdir/\"\npwd\nls -la\nls -la $BUILD_DIR/volumes/workdir/\n\
             \necho -n \"$IMAGE\" > volumes/workdir/IMAGE_URL\npodman inspect $IMAGE\
             \ | jq -r '.[].Digest' > volumes/workdir/IMAGE_DIGEST\npodman inspect\
             \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > volumes/workdir/BASE_IMAGES_DIGESTS\n\
