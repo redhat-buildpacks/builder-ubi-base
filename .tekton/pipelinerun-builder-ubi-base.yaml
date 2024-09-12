@@ -210,7 +210,7 @@ spec:
             }
 
             echo "##########################################################################################"
-            echo "### Step 1111 :: Configure SSH and rsync folders from tekton to the VM"
+            echo "### Step 16666 :: Configure SSH and rsync folders from tekton to the VM"
             echo "##########################################################################################"
             mkdir -p ~/.ssh
             if [ -e "/ssh/error" ]; then
