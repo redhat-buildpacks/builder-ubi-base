@@ -69,12 +69,6 @@ curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -
 # Not needed as syft is already saved under bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
 syft --version
 
-#echo "### Install cosign"
-#curl -O -sL "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
-#mv cosign-linux-amd64 ${USER_BIN_DIR}/cosign
-#chmod +x ${USER_BIN_DIR}/cosign
-#cosign version
-
 echo "### Install go ###"
 curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C ${TEMP_DIR} -xz go
 mkdir -p ${USER_BIN_DIR}/go
@@ -135,13 +129,6 @@ syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volu
 #echo "### Show the content of the sbom file"
 #cat volumes/workdir/sbom-image.json | jq -r '.'
 
-# echo "########################################"
-# echo "### Add the SBOM to the image"
-# echo "########################################"
-# IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
-# echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
-# cosign attest --predicate $BUILD_DIR/volumes/workdir/sbom-image.json "${IMAGE_REF}"
-
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
@@ -184,14 +171,8 @@ echo "### Step 4 :: Export results to Tekton"
 echo "##########################################################################################"
 
 echo "### Export the tekton results"
-echo "### IMAGE_URL: $IMAGE"
-echo -n "$IMAGE" > "$(results.IMAGE_URL.path)"
+echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)"
 
-echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
-cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
+cat /var/workdir/IMAGE_DIGEST | tee "$(results.IMAGE_DIGEST.path)"
 
-echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
-cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
-
-#echo "### IMAGE_REF: $(cat /var/workdir/IMAGE_REF)"
-#cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
+cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
