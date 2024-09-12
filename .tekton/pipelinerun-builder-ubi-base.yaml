@@ -266,7 +266,11 @@ spec:
 
             export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
             echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
-            unshare -Uf $UNSHARE_ARGS --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
+            # unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>
+            # unshare -Uf --net --keep-caps -r
+            echo "## Unshare version"
+            unshare -V
+            pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
 
             container=$(podman create ${IMAGE})
             echo "## Container created: $container from image: ${IMAGE}"
