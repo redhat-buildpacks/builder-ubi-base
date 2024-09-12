@@ -182,8 +182,8 @@ job:
         
         echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: volumes/workdir/"
         pwd
-        ls -la
-        ls -la $BUILD_DIR/volumes/workdir/
+        ls -la ../..
+        # ls -la $BUILD_DIR/volumes/workdir/
         
         echo -n "$IMAGE" > volumes/workdir/IMAGE_URL
         podman inspect $IMAGE | jq -r '.[].Digest' > volumes/workdir/IMAGE_DIGEST
