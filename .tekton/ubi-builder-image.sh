@@ -177,4 +177,5 @@ echo -n "$IMAGE" > "$(results.IMAGE_URL.path)"
 echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
 cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
 
-cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
+echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
+cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
