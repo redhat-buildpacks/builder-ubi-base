@@ -27,6 +27,9 @@ function log() {
     echo -e "${border}${RESET}"
 }
 
+echo "##########################################################################################"
+echo "### Step 1 :: Configure SSH and rsync folders from tekton to the VM"
+echo "##########################################################################################"
 mkdir -p ~/.ssh
 if [ -e "/ssh/error" ]; then
   #no server could be provisioned
@@ -54,6 +57,9 @@ rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
+echo "##########################################################################################"
+echo "### Step 2 :: Create the bash script to be executed within the VM"
+echo "##########################################################################################"
 mkdir -p scripts
 cat >scripts/script-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
@@ -150,6 +156,9 @@ syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volu
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
+echo "##########################################################################################"
+echo "### Step 3 :: Execute the bash script on the VM"
+echo "##########################################################################################"
 rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
 rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
@@ -180,6 +189,10 @@ echo "### rsync folders from VM to pod"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
+
+echo "##########################################################################################"
+echo "### Step 4 :: Export results to Tekton"
+echo "##########################################################################################"
 
 echo "### Export the tekton results"
 echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)"
