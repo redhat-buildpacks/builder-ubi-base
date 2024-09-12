@@ -224,13 +224,16 @@ spec:
             \npack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\n\n\
             echo \"### Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
             \n\necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\
-            \n\necho \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
-            \ $BUILD_DIR/volumes/workdir/\"\necho -n \"$IMAGE\" > $BUILD_DIR/volumes/workdir/IMAGE_URL\n\
-            podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST\n\
+            \necho \"###########################################################\"\
+            \necho \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
+            \ $BUILD_DIR/volumes/workdir/\"\necho \"###########################################################\"\
+            \necho -n \"$IMAGE\" > $BUILD_DIR/volumes/workdir/IMAGE_URL\npodman inspect\
+            \ $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST\n\
             \nBASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '.\"build-image\"\
             ')\npodman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS\n\
-            \n\necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
-            \ --output cyclonedx-json=$BUILD_DIR/volumes/workdir/sbom-image.json\n\
+            \necho \"########################################\"\necho \"### Running\
+            \ syft on the image filesystem\"\necho \"########################################\"\
+            \nsyft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volumes/workdir/sbom-image.json\n\
             \n#echo \"### Show the content of the sbom file\"\n#cat volumes/workdir/sbom-image.json\
             \ | jq -r '.'\n\nREMOTESSHEOF\nchmod +x scripts/script-build.sh\n\nrsync\
             \ -ra scripts \"$SSH_HOST:$BUILD_DIR\"\nrsync -ra \"$HOME/.docker/\" \"\
@@ -252,11 +255,11 @@ spec:
             \ \"### Print ${HOME}/shared/container_name\"\n# cat ${HOME}/shared/container_name\n\
             ############### - END :: TO BE REVIEWED - #################\n\necho \"\
             ### rsync folders from VM to pod\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\
-            \ /var/workdir/\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"  \"/shared/\"\
-            \nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\n\n\
-            echo \"### Export the tekton results\"\necho -n \"$IMAGE\" | tee \"$(results.IMAGE_URL.path)\n\
-            cat /var/workdir/IMAGE_DIGEST | tee \"$(results.IMAGE_DIGEST.path)\"\n\
-            cat /var/workdir/BASE_IMAGES_DIGESTS | tee \"$(results.BASE_IMAGES_DIGESTS.path)\"\
+            \ /var/workdir/\nrsync -ra \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"  \"\
+            /shared/\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\
+            \n\necho \"### Export the tekton results\"\necho -n \"$IMAGE\" | tee \"\
+            $(results.IMAGE_URL.path)\ncat /var/workdir/IMAGE_DIGEST | tee \"$(results.IMAGE_DIGEST.path)\"\
+            \ncat /var/workdir/BASE_IMAGES_DIGESTS | tee \"$(results.BASE_IMAGES_DIGESTS.path)\"\
             \n"
           volumeMounts:
           - mountPath: "/ssh"

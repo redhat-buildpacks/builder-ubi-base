@@ -181,16 +181,18 @@ job:
         echo "### Push the image produced: $IMAGE"
         podman push $IMAGE
         
-        
+        echo "###########################################################"
         echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
+        echo "###########################################################"
         echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
         podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST
         
         BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
         podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
         
-        
+        echo "########################################"
         echo "### Running syft on the image filesystem"
+        echo "########################################"
         syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volumes/workdir/sbom-image.json
         
         #echo "### Show the content of the sbom file"
@@ -227,8 +229,8 @@ job:
         
         echo "### rsync folders from VM to pod"
         rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
-        rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
-        rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
+        rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
+        rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
         
         echo "### Export the tekton results"
         echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)
