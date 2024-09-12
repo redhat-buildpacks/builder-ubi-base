@@ -162,6 +162,8 @@ spec:
           name: "IMAGE_DIGEST"
         - description: "Digests of the base images used for build"
           name: "BASE_IMAGES_DIGESTS"
+        - description: "SBOM Image URL"
+          name: "SBOM_BLOB_URL"
         stepTemplate:
           env:
           - name: "BUILDER_IMAGE"
@@ -319,7 +321,7 @@ spec:
 
             IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
             echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
-            echo "Image reference with sha256: $IMAGE_REF"
+            echo "Image reference with sha: $IMAGE_REF"
 
             echo "########################################"
             echo "### Add the SBOM to the image"
@@ -376,6 +378,11 @@ spec:
 
             echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
             cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
+
+            echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
+            SBOM_REPO="${IMAGE%:*}"
+            SBOM_DIGEST="$(sha256sum /var/workdir/sbom-image.json | cut -d' ' -f1)"
+            echo -n "${SBOM_REPO}@sha256:${SBOM_DIGEST}" | tee "$(results.SBOM_BLOB_URL.path)"
           volumeMounts:
           - mountPath: "/ssh"
             name: "ssh"
