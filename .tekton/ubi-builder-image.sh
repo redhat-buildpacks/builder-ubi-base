@@ -24,7 +24,7 @@ function log() {
     # Display the message with the color and borders
     echo -e "${color}${border}"
     echo -e "${color}## ${message} ##"
-    echo -e "${border}${reset}"
+    echo -e "${border}${RESET}"
 }
 
 mkdir -p ~/.ssh
