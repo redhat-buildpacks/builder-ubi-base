@@ -308,8 +308,8 @@ spec:
             curl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 > ${USER_BIN_DIR}/jq
             chmod +x ${USER_BIN_DIR}/jq
 
-            echo "## Show the content of the sbom file"
-            cat sbom-image.json | jq -r '.'
+            #echo "## Show the content of the sbom file"
+            #cat sbom-image.json | jq -r '.'
 
             REMOTESSHEOF
             chmod +x scripts/script-build.sh
