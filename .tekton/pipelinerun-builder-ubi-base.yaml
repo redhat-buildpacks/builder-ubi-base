@@ -227,10 +227,14 @@ spec:
             #echo \"### List ${HOME}/shared/container_path\"\n#ls -la $(cat ${HOME}/shared/container_path)\n\
             \necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
             \ --output cyclonedx-json=sbom-image.json\n\n#echo \"### Show the content\
-            \ of the sbom file\"\n#cat sbom-image.json | jq -r '.'\n\nREMOTESSHEOF\n\
-            chmod +x scripts/script-build.sh\n\nrsync -ra scripts \"$SSH_HOST:$BUILD_DIR\"\
-            \nrsync -ra \"$HOME/.docker/\" \"$SSH_HOST:$BUILD_DIR/.docker/\"\n\nssh\
-            \ $SSH_ARGS \"$SSH_HOST\" \\\n  \"BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM\
+            \ of the sbom file\"\n#cat sbom-image.json | jq -r '.'\n\necho \"### Export:\
+            \ IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under $BUILD_DIR/results\"\
+            \necho -n \"$IMAGE\" > $BUILD_DIR/results/IMAGE_URL\npodman inspect $IMAGE\
+            \ | jq -r '.[].Digest' > $BUILD_DIR/results/IMAGE_DIGEST\npodman inspect\
+            \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > $BUILD_DIR/results/BASE_IMAGES_DIGESTS\n\
+            \nREMOTESSHEOF\nchmod +x scripts/script-build.sh\n\nrsync -ra scripts\
+            \ \"$SSH_HOST:$BUILD_DIR\"\nrsync -ra \"$HOME/.docker/\" \"$SSH_HOST:$BUILD_DIR/.docker/\"\
+            \n\nssh $SSH_ARGS \"$SSH_HOST\" \\\n  \"BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM\
             \ IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION\
             \ BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\n###############\
             \ - BEGIN :: TO BE REVIEWED #################\n# container=$(podman create\
@@ -242,13 +246,12 @@ spec:
             # find $(cat ${HOME}/shared/container_path) -xtype l -delete\n# echo $container\
             \ > ${HOME}/shared/container_name\n# echo \"### Print ${HOME}/shared/container_name\"\
             \n# cat ${HOME}/shared/container_name\n############### - END :: TO BE\
-            \ REVIEWED - #################\n\necho \"### Export as results: IMAGE_URL,\
-            \ IMAGE_DIGEST & BASE_IMAGES_DIGESTS\"\necho -n \"$IMAGE\" | tee $(results.IMAGE_URL.path)\n\
-            podman inspect $IMAGE | jq -r '.[].Digest' | tee \"$(results.IMAGE_DIGEST.path)\"\
-            \npodman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest'\
-            \ | tee \"$(results.BASE_IMAGES_DIGESTS.path)\"\n\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"\
+            \ REVIEWED - #################\n\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"\
             \  \"/shared/\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\
-            \n"
+            \n\n#cat echo -n \"$IMAGE\" >  tee \"$(results.IMAGE_URL.path)\n#podman\
+            \ inspect $IMAGE | jq -r '.[].Digest' | tee \"$(results.IMAGE_DIGEST.path)\"\
+            \n#podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest'\
+            \ | tee \"$(results.BASE_IMAGES_DIGESTS.path)\"\n"
           volumeMounts:
           - mountPath: "/ssh"
             name: "ssh"

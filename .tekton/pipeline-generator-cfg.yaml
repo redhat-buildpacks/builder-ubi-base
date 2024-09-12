@@ -192,6 +192,11 @@ job:
         #echo "### Show the content of the sbom file"
         #cat sbom-image.json | jq -r '.'
         
+        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under $BUILD_DIR/results"
+        echo -n "$IMAGE" > $BUILD_DIR/results/IMAGE_URL
+        podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/results/IMAGE_DIGEST
+        podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > $BUILD_DIR/results/BASE_IMAGES_DIGESTS
+        
         REMOTESSHEOF
         chmod +x scripts/script-build.sh
         
@@ -215,13 +220,12 @@ job:
         # cat ${HOME}/shared/container_name
         ############### - END :: TO BE REVIEWED - #################
         
-        echo "### Export as results: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS"
-        echo -n "$IMAGE" | tee $(results.IMAGE_URL.path)
-        podman inspect $IMAGE | jq -r '.[].Digest' | tee "$(results.IMAGE_DIGEST.path)"
-        podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee "$(results.BASE_IMAGES_DIGESTS.path)"
-        
         rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
+        
+        #cat echo -n "$IMAGE" >  tee "$(results.IMAGE_URL.path)
+        #podman inspect $IMAGE | jq -r '.[].Digest' | tee "$(results.IMAGE_DIGEST.path)"
+        #podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee "$(results.BASE_IMAGES_DIGESTS.path)"
         
 
         
