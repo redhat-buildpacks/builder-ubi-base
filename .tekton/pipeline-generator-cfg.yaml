@@ -118,18 +118,20 @@ job:
         echo "### Podman info ###"
         podman version
         
-        echo "## Start podman.socket ##"
+        echo "### Start podman.socket ##"
         systemctl --user start podman.socket
         systemctl status podman.socket
         
-        curl -sSL "https://github.com/buildpacks/pack/releases/download/${PACK_CLI_VERSION}/pack-${PACK_CLI_VERSION}-linux.tgz" | tar -C ${TEMP_DIR} --no-same-owner -xzv pack
-        mv ${TEMP_DIR}/pack ${USER_BIN_DIR}
+        echo "### Installing jq ..."
+        curl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 > ${USER_BIN_DIR}/jq
+        chmod +x ${USER_BIN_DIR}/jq
+
+        echo "### Install syft"
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+        mv bin/syft ${USER_BIN_DIR}/syft
+        syft --version
         
-        echo "### Pack version ###"
-        pack --version
-        pack config experimental true
-        
-        echo "### Go version ###"
+        echo "### Install go ###"
         curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C ${TEMP_DIR} -xz go
         mkdir -p ${USER_BIN_DIR}/go
         mv ${TEMP_DIR}/go ${USER_BIN_DIR}
@@ -139,7 +141,15 @@ job:
         export GOPATH=$HOME/workspace
         export GOROOT=${USER_BIN_DIR}/go
         export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-        go version
+        go version        
+        
+        echo "### Install pack ###"        
+        curl -sSL "https://github.com/buildpacks/pack/releases/download/${PACK_CLI_VERSION}/pack-${PACK_CLI_VERSION}-linux.tgz" | tar -C ${TEMP_DIR} --no-same-owner -xzv pack
+        mv ${TEMP_DIR}/pack ${USER_BIN_DIR}
+        
+        echo "### Pack version ###"
+        pack --version
+        pack config experimental true
         
         echo "### Build the builder image using pack"
         curl -sSL https://github.com/paketo-community/builder-ubi-base/tarball/main | tar -xz -C ${TEMP_DIR}
@@ -150,55 +160,51 @@ job:
           PACK_ARGS+=" $build_arg"
         done
         
-        echo "## Start :: Echo args to be passed to pack"
+        echo "### Start :: Echo args to be passed to pack"
         echo $PACK_ARGS
-        echo "## End :: Echo args to be passed to pack"
+        echo "### End :: Echo args to be passed to pack"
         
         export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
         
         # unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>
         # unshare -Uf --net --keep-caps -r
-        echo "## Unshare version"
+        echo "### Unshare version"
         unshare -V
         
         echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
         pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
         
         container=$(podman create ${IMAGE})
-        echo "## Container created: $container from image: ${IMAGE}"
+        echo "### Container created: $container from image: ${IMAGE}"
         
         podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
 
-        echo "## Path of the filesystem extracted from the image"
+        echo "### Path of the filesystem extracted from the image"
         cat ${HOME}/shared/container_path
         
         # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
         find $(cat ${HOME}/shared/container_path) -xtype l -delete
         
         echo $container > ${HOME}/shared/container_name
-        echo "## Print ${HOME}/shared/container_name"
+        echo "### Print ${HOME}/shared/container_name"
         cat ${HOME}/shared/container_name
         
+        echo "Export the image as OCI"
         podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
-        echo "## List konflux-final-image"
+        
+        echo "Push the image produced: $IMAGE to its registry"
+        podman push $IMAGE
+        
+        echo "### List konflux-final-image"
         ls -la konflux-final-image
         
-        #echo "## List ${HOME}/shared/container_path"
+        #echo "### List ${HOME}/shared/container_path"
         #ls -la $(cat ${HOME}/shared/container_path)
         
-        echo "## Install syft"
-        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
-        mv bin/syft ${USER_BIN_DIR}/syft
-        syft --version
-        
-        echo "## Running syft on the image filesystem"
+        echo "### Running syft on the image filesystem"
         syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
         
-        echo "##Installing jq ..."
-        curl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 > ${USER_BIN_DIR}/jq
-        chmod +x ${USER_BIN_DIR}/jq
-        
-        #echo "## Show the content of the sbom file"
+        #echo "### Show the content of the sbom file"
         #cat sbom-image.json | jq -r '.'
         
         REMOTESSHEOF

@@ -179,154 +179,74 @@ spec:
           - "$(params.BUILD_ARGS[*])"
           image: "quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275"
           name: "run-script"
-          script: |
-            #!/usr/bin/env bash
-            set -eu
-            set -o pipefail
-
-            mkdir -p ~/.ssh
-            if [ -e "/ssh/error" ]; then
-              #no server could be provisioned
-              cat /ssh/error
-            exit 1
-            elif [ -e "/ssh/otp" ]; then
-              curl --cacert /ssh/otp-ca -XPOST -d @/ssh/otp $(cat /ssh/otp-server) >~/.ssh/id_rsa
-              echo "" >> ~/.ssh/id_rsa
-            else
-              cp /ssh/id_rsa ~/.ssh
-            fi
-            chmod 0400 ~/.ssh/id_rsa
-
-            export SSH_HOST=$(cat /ssh/host)
-            export BUILD_DIR=$(cat /ssh/user-dir)
-            export SSH_ARGS="-o StrictHostKeyChecking=no -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
-
-            # Export the args to be passed to the script
-            export BUILD_ARGS="$@"
-
-            mkdir -p scripts
-            ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
-
-            echo "rsync shared folders ..."
-            rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
-            rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
-
-            cat >scripts/script-build.sh <<'REMOTESSHEOF'
-            #!/bin/sh
-
-            TEMP_DIR="$HOME/tmp"
-            USER_BIN_DIR="$HOME/bin"
-            BUILDPACK_PROJECTS="$HOME/buildpack-repo"
-
-            mkdir -p ${TEMP_DIR}
-            mkdir -p ${USER_BIN_DIR}
-            mkdir -p ${BUILDPACK_PROJECTS}
-            mkdir -p ${HOME}/shared
-
-            export PATH=$PATH:${USER_BIN_DIR}
-
-            echo "### Podman info ###"
-            podman version
-
-            echo "## Start podman.socket ##"
-            systemctl --user start podman.socket
-            systemctl status podman.socket
-
-            curl -sSL "https://github.com/buildpacks/pack/releases/download/${PACK_CLI_VERSION}/pack-${PACK_CLI_VERSION}-linux.tgz" | tar -C ${TEMP_DIR} --no-same-owner -xzv pack
-            mv ${TEMP_DIR}/pack ${USER_BIN_DIR}
-
-            echo "### Pack version ###"
-            pack --version
-            pack config experimental true
-
-            echo "### Go version ###"
-            curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C ${TEMP_DIR} -xz go
-            mkdir -p ${USER_BIN_DIR}/go
-            mv ${TEMP_DIR}/go ${USER_BIN_DIR}
-            chmod +x ${USER_BIN_DIR}/go
-
-            mkdir -p $HOME/workspace
-            export GOPATH=$HOME/workspace
-            export GOROOT=${USER_BIN_DIR}/go
-            export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-            go version
-
-            echo "### Build the builder image using pack"
-            curl -sSL https://github.com/paketo-community/builder-ubi-base/tarball/main | tar -xz -C ${TEMP_DIR}
-            mv ${TEMP_DIR}/paketo-community-builder-ubi-base-* ${BUILDPACK_PROJECTS}/builder-ubi-base
-            cd ${BUILDPACK_PROJECTS}/builder-ubi-base
-
-            for build_arg in "${BUILD_ARGS[@]}"; do
-              PACK_ARGS+=" $build_arg"
-            done
-
-            echo "## Start :: Echo args to be passed to pack"
-            echo $PACK_ARGS
-            echo "## End :: Echo args to be passed to pack"
-
-            export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
-
-            # unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>
-            # unshare -Uf --net --keep-caps -r
-            echo "## Unshare version"
-            unshare -V
-
-            echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
-            pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
-
-            container=$(podman create ${IMAGE})
-            echo "## Container created: $container from image: ${IMAGE}"
-
-            podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
-
-            echo "## Path of the filesystem extracted from the image"
-            cat ${HOME}/shared/container_path
-
-            # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
-            find $(cat ${HOME}/shared/container_path) -xtype l -delete
-
-            echo $container > ${HOME}/shared/container_name
-            echo "## Print ${HOME}/shared/container_name"
-            cat ${HOME}/shared/container_name
-
-            podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
-            echo "## List konflux-final-image"
-            ls -la konflux-final-image
-
-            #echo "## List ${HOME}/shared/container_path"
-            #ls -la $(cat ${HOME}/shared/container_path)
-
-            echo "## Install syft"
-            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
-            mv bin/syft ${USER_BIN_DIR}/syft
-            syft --version
-
-            echo "## Running syft on the image filesystem"
-            syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
-
-            echo "##Installing jq ..."
-            curl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 > ${USER_BIN_DIR}/jq
-            chmod +x ${USER_BIN_DIR}/jq
-
-            #echo "## Show the content of the sbom file"
-            #cat sbom-image.json | jq -r '.'
-
-            REMOTESSHEOF
-            chmod +x scripts/script-build.sh
-
-            rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
-            rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
-
-            ssh $SSH_ARGS "$SSH_HOST" \
-              "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" \
-               scripts/script-build.sh
-
-            echo -n "$IMAGE" | tee $(results.IMAGE_URL.path)
-            podman inspect $IMAGE | jq -r '.[].Digest' | tee "$(results.IMAGE_DIGEST.path)"
-            podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee "$(results.BASE_IMAGES_DIGESTS.path)"
-
-            rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
-            rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
+          script: "#!/usr/bin/env bash\nset -eu\nset -o pipefail\n\nmkdir -p ~/.ssh\n\
+            if [ -e \"/ssh/error\" ]; then\n  #no server could be provisioned\n  cat\
+            \ /ssh/error\nexit 1\nelif [ -e \"/ssh/otp\" ]; then\n  curl --cacert\
+            \ /ssh/otp-ca -XPOST -d @/ssh/otp $(cat /ssh/otp-server) >~/.ssh/id_rsa\n\
+            \  echo \"\" >> ~/.ssh/id_rsa\nelse\n  cp /ssh/id_rsa ~/.ssh\nfi\nchmod\
+            \ 0400 ~/.ssh/id_rsa\n\nexport SSH_HOST=$(cat /ssh/host)\nexport BUILD_DIR=$(cat\
+            \ /ssh/user-dir)\nexport SSH_ARGS=\"-o StrictHostKeyChecking=no -o ServerAliveInterval=60\
+            \ -o ServerAliveCountMax=10\"\n\n# Export the args to be passed to the\
+            \ script\nexport BUILD_ARGS=\"$@\"\n\nmkdir -p scripts\nssh $SSH_ARGS\
+            \ \"$SSH_HOST\" mkdir -p \"$BUILD_DIR/workspaces\" \"$BUILD_DIR/scripts\"\
+            \ \"$BUILD_DIR/volumes\"\n\necho \"rsync shared folders ...\"\nrsync -ra\
+            \ \"/shared/\" \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"\nrsync -ra \"\
+            /tekton/results/\" \"$SSH_HOST:$BUILD_DIR/results/\"\n\ncat >scripts/script-build.sh\
+            \ <<'REMOTESSHEOF'\n#!/bin/sh\n\nTEMP_DIR=\"$HOME/tmp\"\nUSER_BIN_DIR=\"\
+            $HOME/bin\"\nBUILDPACK_PROJECTS=\"$HOME/buildpack-repo\"\n\nmkdir -p ${TEMP_DIR}\n\
+            mkdir -p ${USER_BIN_DIR}\nmkdir -p ${BUILDPACK_PROJECTS}\nmkdir -p ${HOME}/shared\n\
+            \nexport PATH=$PATH:${USER_BIN_DIR}\n\necho \"### Podman info ###\"\n\
+            podman version\n\necho \"### Start podman.socket ##\"\nsystemctl --user\
+            \ start podman.socket\nsystemctl status podman.socket\n\necho \"### Installing\
+            \ jq ...\"\ncurl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64\
+            \ > ${USER_BIN_DIR}/jq\nchmod +x ${USER_BIN_DIR}/jq\n\necho \"### Install\
+            \ syft\"\ncurl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh\
+            \ | sh -s --\nmv bin/syft ${USER_BIN_DIR}/syft\nsyft --version\n\necho\
+            \ \"### Install go ###\"\ncurl -sSL \"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\"\
+            \ | tar -C ${TEMP_DIR} -xz go\nmkdir -p ${USER_BIN_DIR}/go\nmv ${TEMP_DIR}/go\
+            \ ${USER_BIN_DIR}\nchmod +x ${USER_BIN_DIR}/go\n\nmkdir -p $HOME/workspace\n\
+            export GOPATH=$HOME/workspace\nexport GOROOT=${USER_BIN_DIR}/go\nexport\
+            \ PATH=$PATH:$GOROOT/bin:$GOPATH/bin\ngo version        \n\necho \"###\
+            \ Install pack ###\"        \ncurl -sSL \"https://github.com/buildpacks/pack/releases/download/${PACK_CLI_VERSION}/pack-${PACK_CLI_VERSION}-linux.tgz\"\
+            \ | tar -C ${TEMP_DIR} --no-same-owner -xzv pack\nmv ${TEMP_DIR}/pack\
+            \ ${USER_BIN_DIR}\n\necho \"### Pack version ###\"\npack --version\npack\
+            \ config experimental true\n\necho \"### Build the builder image using\
+            \ pack\"\ncurl -sSL https://github.com/paketo-community/builder-ubi-base/tarball/main\
+            \ | tar -xz -C ${TEMP_DIR}\nmv ${TEMP_DIR}/paketo-community-builder-ubi-base-*\
+            \ ${BUILDPACK_PROJECTS}/builder-ubi-base\ncd ${BUILDPACK_PROJECTS}/builder-ubi-base\n\
+            \nfor build_arg in \"${BUILD_ARGS[@]}\"; do\n  PACK_ARGS+=\" $build_arg\"\
+            \ndone\n\necho \"### Start :: Echo args to be passed to pack\"\necho $PACK_ARGS\n\
+            echo \"### End :: Echo args to be passed to pack\"\n\nexport DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock\n\
+            \n# unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536\
+            \ =>\n# unshare -Uf --net --keep-caps -r\necho \"### Unshare version\"\
+            \nunshare -V\n\necho \"pack builder create ${IMAGE} --config builder.toml\
+            \ ${PACK_ARGS}\"\npack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\n\
+            \ncontainer=$(podman create ${IMAGE})\necho \"### Container created: $container\
+            \ from image: ${IMAGE}\"\n\npodman unshare sh -c 'podman mount $container\
+            \ | tee ${HOME}/shared/container_path; podman unmount $container'\n\n\
+            echo \"### Path of the filesystem extracted from the image\"\ncat ${HOME}/shared/container_path\n\
+            \n# delete symlinks - they may point outside the container rootfs, messing\
+            \ with SBOM scanners\nfind $(cat ${HOME}/shared/container_path) -xtype\
+            \ l -delete\n\necho $container > ${HOME}/shared/container_name\necho \"\
+            ### Print ${HOME}/shared/container_name\"\ncat ${HOME}/shared/container_name\n\
+            \necho \"Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
+            \n\necho \"Push the image produced: $IMAGE to its registry\"\npodman push\
+            \ $IMAGE\n\necho \"### List konflux-final-image\"\nls -la konflux-final-image\n\
+            \n#echo \"### List ${HOME}/shared/container_path\"\n#ls -la $(cat ${HOME}/shared/container_path)\n\
+            \necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
+            \ --output cyclonedx-json=sbom-image.json\n\n#echo \"### Show the content\
+            \ of the sbom file\"\n#cat sbom-image.json | jq -r '.'\n\nREMOTESSHEOF\n\
+            chmod +x scripts/script-build.sh\n\nrsync -ra scripts \"$SSH_HOST:$BUILD_DIR\"\
+            \nrsync -ra \"$HOME/.docker/\" \"$SSH_HOST:$BUILD_DIR/.docker/\"\n\nssh\
+            \ $SSH_ARGS \"$SSH_HOST\" \\\n  \"BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM\
+            \ IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION\
+            \ BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\necho -n \"\
+            $IMAGE\" | tee $(results.IMAGE_URL.path)\npodman inspect $IMAGE | jq -r\
+            \ '.[].Digest' | tee \"$(results.IMAGE_DIGEST.path)\"\npodman inspect\
+            \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee \"\
+            $(results.BASE_IMAGES_DIGESTS.path)\"\n\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"\
+            \  \"/shared/\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\
+            \n"
           volumeMounts:
           - mountPath: "/ssh"
             name: "ssh"
