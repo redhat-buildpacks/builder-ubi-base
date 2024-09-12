@@ -211,9 +211,9 @@ job:
           "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" \
            scripts/script-build.sh
         
-        echo -n "URL of the image build is: $IMAGE" | tee "$(results.IMAGE_URL.path)"
-        echo -n "sha256ddddddddddddddddddddd" | tee "$(results.IMAGE_DIGEST.path)"
-        echo -n "sha256eeeeeeeeeeeeeeeeeeeeee" | tee "$(results.BASE_IMAGES_DIGESTS.path)"
+        echo -n "$IMAGE" | tee $(results.IMAGE_URL.path)
+        podman inspect $IMAGE | jq -r '.[].Digest' | tee "$(results.IMAGE_DIGEST.path)"
+        podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee "$(results.BASE_IMAGES_DIGESTS.path)"
         
         rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
