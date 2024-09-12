@@ -221,18 +221,10 @@ spec:
             \ =>\n# unshare -Uf --net --keep-caps -r\necho \"### Unshare version\"\
             \nunshare -V\n\necho \"pack builder create ${IMAGE} --config builder.toml\
             \ ${PACK_ARGS}\"\npack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\n\
-            \ncontainer=$(podman create ${IMAGE})\necho \"### Container created: $container\
-            \ from image: ${IMAGE}\"\n\npodman unshare sh -c 'podman mount $container\
-            \ | tee ${HOME}/shared/container_path; podman unmount $container'\n\n\
-            echo \"### Path of the filesystem extracted from the image\"\ncat ${HOME}/shared/container_path\n\
-            \n# delete symlinks - they may point outside the container rootfs, messing\
-            \ with SBOM scanners\nfind $(cat ${HOME}/shared/container_path) -xtype\
-            \ l -delete\n\necho $container > ${HOME}/shared/container_name\necho \"\
-            ### Print ${HOME}/shared/container_name\"\ncat ${HOME}/shared/container_name\n\
-            \necho \"Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
-            \n\necho \"Push the image produced: $IMAGE to its registry\"\npodman push\
-            \ $IMAGE\n\necho \"### List konflux-final-image\"\nls -la konflux-final-image\n\
-            \n#echo \"### List ${HOME}/shared/container_path\"\n#ls -la $(cat ${HOME}/shared/container_path)\n\
+            \necho \"### Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
+            \n\n#echo \"### List konflux-final-image\"\n#ls -la konflux-final-image\n\
+            \necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\n\
+            #echo \"### List ${HOME}/shared/container_path\"\n#ls -la $(cat ${HOME}/shared/container_path)\n\
             \necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
             \ --output cyclonedx-json=sbom-image.json\n\n#echo \"### Show the content\
             \ of the sbom file\"\n#cat sbom-image.json | jq -r '.'\n\nREMOTESSHEOF\n\
@@ -240,11 +232,21 @@ spec:
             \nrsync -ra \"$HOME/.docker/\" \"$SSH_HOST:$BUILD_DIR/.docker/\"\n\nssh\
             \ $SSH_ARGS \"$SSH_HOST\" \\\n  \"BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM\
             \ IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION\
-            \ BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\necho -n \"\
-            $IMAGE\" | tee $(results.IMAGE_URL.path)\npodman inspect $IMAGE | jq -r\
-            \ '.[].Digest' | tee \"$(results.IMAGE_DIGEST.path)\"\npodman inspect\
-            \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee \"\
-            $(results.BASE_IMAGES_DIGESTS.path)\"\n\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"\
+            \ BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\n###############\
+            \ - BEGIN :: TO BE REVIEWED #################\n# container=$(podman create\
+            \ ${IMAGE})\n# echo \"### Container created: $container from image: ${IMAGE}\"\
+            \n# podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path;\
+            \ podman unmount $container'\n# echo \"### Path of the filesystem extracted\
+            \ from the image\"\n# cat ${HOME}/shared/container_path\n# # delete symlinks\
+            \ - they may point outside the container rootfs, messing with SBOM scanners\n\
+            # find $(cat ${HOME}/shared/container_path) -xtype l -delete\n# echo $container\
+            \ > ${HOME}/shared/container_name\n# echo \"### Print ${HOME}/shared/container_name\"\
+            \n# cat ${HOME}/shared/container_name\n############### - END :: TO BE\
+            \ REVIEWED - #################\n\necho \"### Export as results: IMAGE_URL,\
+            \ IMAGE_DIGEST & BASE_IMAGES_DIGESTS\"\necho -n \"$IMAGE\" | tee $(results.IMAGE_URL.path)\n\
+            podman inspect $IMAGE | jq -r '.[].Digest' | tee \"$(results.IMAGE_DIGEST.path)\"\
+            \npodman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest'\
+            \ | tee \"$(results.BASE_IMAGES_DIGESTS.path)\"\n\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"\
             \  \"/shared/\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\
             \n"
           volumeMounts:

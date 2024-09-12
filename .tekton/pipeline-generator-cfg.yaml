@@ -174,29 +174,14 @@ job:
         echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
         pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
         
-        container=$(podman create ${IMAGE})
-        echo "### Container created: $container from image: ${IMAGE}"
-        
-        podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
-
-        echo "### Path of the filesystem extracted from the image"
-        cat ${HOME}/shared/container_path
-        
-        # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
-        find $(cat ${HOME}/shared/container_path) -xtype l -delete
-        
-        echo $container > ${HOME}/shared/container_name
-        echo "### Print ${HOME}/shared/container_name"
-        cat ${HOME}/shared/container_name
-        
-        echo "Export the image as OCI"
+        echo "### Export the image as OCI"
         podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
         
-        echo "Push the image produced: $IMAGE to its registry"
-        podman push $IMAGE
+        #echo "### List konflux-final-image"
+        #ls -la konflux-final-image
         
-        echo "### List konflux-final-image"
-        ls -la konflux-final-image
+        echo "### Push the image produced: $IMAGE"
+        podman push $IMAGE
         
         #echo "### List ${HOME}/shared/container_path"
         #ls -la $(cat ${HOME}/shared/container_path)
@@ -217,6 +202,20 @@ job:
           "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" \
            scripts/script-build.sh
         
+        ############### - BEGIN :: TO BE REVIEWED #################
+        # container=$(podman create ${IMAGE})
+        # echo "### Container created: $container from image: ${IMAGE}"
+        # podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
+        # echo "### Path of the filesystem extracted from the image"
+        # cat ${HOME}/shared/container_path
+        # # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
+        # find $(cat ${HOME}/shared/container_path) -xtype l -delete
+        # echo $container > ${HOME}/shared/container_name
+        # echo "### Print ${HOME}/shared/container_name"
+        # cat ${HOME}/shared/container_name
+        ############### - END :: TO BE REVIEWED - #################
+        
+        echo "### Export as results: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS"
         echo -n "$IMAGE" | tee $(results.IMAGE_URL.path)
         podman inspect $IMAGE | jq -r '.[].Digest' | tee "$(results.IMAGE_DIGEST.path)"
         podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee "$(results.BASE_IMAGES_DIGESTS.path)"
