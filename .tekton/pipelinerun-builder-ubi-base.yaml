@@ -152,10 +152,6 @@ spec:
       - name: "BUILD_ARGS"
         value:
         - "-v"
-      - name: "caTrustConfigMapKey"
-        value: "ca-bundle.crt"
-      - name: "caTrustConfigMapName"
-        value: "trusted-ca"
       runAfter:
       - "prefetch-dependencies"
       taskSpec:
@@ -215,8 +211,6 @@ spec:
 
             echo "### rsync folders from pod to VM ..."
             rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
-            rsync -ra /mnt/trusted-ca "$SSH_HOST:$BUILD_DIR/volumes/trusted-ca/"
-            
             rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
             rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
@@ -328,15 +322,6 @@ spec:
             echo "########################################"
             IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
             echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
-            
-            ca_bundle=$BUILD_DIR/volumes/trusted-ca/ca-bundle.crt
-            #if [ -f "$ca_bundle" ]; then
-            #  echo "### Using mounted CA bundle: $ca_bundle"
-            #  cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-            #  update-ca-trust
-            #fi
-      
-            # cosign attest --key $ca-bundle --predicate $BUILD_DIR/volumes/workdir/sbom-image.json ${IMAGE_REF} -y
             cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx ${IMAGE_REF}
 
             REMOTESSHEOF
@@ -399,9 +384,6 @@ spec:
           - mountPath: "/var/workdir"
             name: "workdir"
             readOnly: false
-          - mountPath: "/mnt/trusted-ca"
-            name: trusted-ca
-            readOnly: true
         volumes:
         - name: "ssh"
           secret:
@@ -410,13 +392,6 @@ spec:
           name: "shared"
         - emptyDir: {}
           name: "workdir"
-        - configMap:
-            items:
-              - key: $(params.caTrustConfigMapKey)
-                path: ca-bundle.crt
-            name: $(params.caTrustConfigMapName)
-            optional: true
-          name: trusted-ca
       workspaces:
       - name: "source"
         workspace: "workspace"
