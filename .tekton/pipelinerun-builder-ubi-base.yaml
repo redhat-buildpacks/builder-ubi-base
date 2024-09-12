@@ -336,7 +336,6 @@ spec:
             #  update-ca-trust
             #fi
       
-            # cosign attest --key $ca-bundle --predicate $BUILD_DIR/volumes/workdir/sbom-image.json ${IMAGE_REF} -y
             cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx $(cat "$(results.IMAGE_REF.path)")
 
             REMOTESSHEOF
