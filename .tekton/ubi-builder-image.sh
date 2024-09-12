@@ -196,10 +196,11 @@ echo "### Step 4 :: Export results to Tekton"
 echo "##########################################################################################"
 
 echo "### Export the tekton results"
-ls -la /var/workdir/
-cat /var/workdir/IMAGE_DIGEST
-cat /var/workdir/BASE_IMAGES_DIGESTS
+echo "### IMAGE_URL: $IMAGE"
+echo -n "$IMAGE" > "$(results.IMAGE_URL.path)"
 
-echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)"
-cat /var/workdir/IMAGE_DIGEST | tee "$(results.IMAGE_DIGEST.path)"
-cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
+echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
+cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
+
+echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
+cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
