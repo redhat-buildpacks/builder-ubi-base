@@ -179,20 +179,30 @@ spec:
           - "$(params.BUILD_ARGS[*])"
           image: "quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275"
           name: "run-script"
-          script: "#!/usr/bin/env bash\nset -eu\nset -o pipefail\n\nmkdir -p ~/.ssh\n\
-            if [ -e \"/ssh/error\" ]; then\n  #no server could be provisioned\n  cat\
+          script: "#!/usr/bin/env bash\nset -eu\nset -o pipefail\n\nfunction log()\
+            \ {\n    local color=\"$1\"\n    local message=\"$2\"\n\n    local RED='\\\
+            033[0;31m'\n    local GREEN='\\033[0;32m'\n    local YELLOW='\\033[0;33m'\n\
+            \    local BLUE='\\033[0;34m'\n    local PURPLE='\\033[0;35m'\n    local\
+            \ CYAN='\\033[0;36m'\n    local RESET='\\033[0m'\n\n    # Calculate the\
+            \ length of the message plus the extra decorations\n    local message_length=${#message}\n\
+            \    local border_length=$((message_length + 6))\n\n    # Create the top\
+            \ and bottom border\n    local border=$(printf \"%${border_length}s\"\
+            \ | tr ' ' '#')\n\n    # Display the message with the color and borders\n\
+            \    echo -e \"${color}${border}\"\n    echo -e \"${color}## ${message}\
+            \ ##\"\n    echo -e \"${border}${reset}\"\n}\n\nmkdir -p ~/.ssh\nif [\
+            \ -e \"/ssh/error\" ]; then\n  #no server could be provisioned\n  cat\
             \ /ssh/error\nexit 1\nelif [ -e \"/ssh/otp\" ]; then\n  curl --cacert\
             \ /ssh/otp-ca -XPOST -d @/ssh/otp $(cat /ssh/otp-server) >~/.ssh/id_rsa\n\
             \  echo \"\" >> ~/.ssh/id_rsa\nelse\n  cp /ssh/id_rsa ~/.ssh\nfi\nchmod\
             \ 0400 ~/.ssh/id_rsa\n\nexport SSH_HOST=$(cat /ssh/host)\nexport BUILD_DIR=$(cat\
             \ /ssh/user-dir)\nexport SSH_ARGS=\"-o StrictHostKeyChecking=no -o ServerAliveInterval=60\
             \ -o ServerAliveCountMax=10\"\n\n# Export the args to be passed to the\
-            \ script\nexport BUILD_ARGS=\"$@\"\n\nmkdir -p scripts\nssh $SSH_ARGS\
-            \ \"$SSH_HOST\" mkdir -p \"$BUILD_DIR/workspaces\" \"$BUILD_DIR/scripts\"\
-            \ \"$BUILD_DIR/volumes\"\n\necho \"### rsync folders from pod to VM ...\"\
-            \nrsync -ra /var/workdir/ \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\n\
-            rsync -ra \"/shared/\" \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"\nrsync\
-            \ -ra \"/tekton/results/\" \"$SSH_HOST:$BUILD_DIR/results/\"\n\ncat >scripts/script-build.sh\
+            \ script\nexport BUILD_ARGS=\"$@\"\n\nssh $SSH_ARGS \"$SSH_HOST\" mkdir\
+            \ -p \"$BUILD_DIR/workspaces\" \"$BUILD_DIR/scripts\" \"$BUILD_DIR/volumes\"\
+            \n\nlog GREEN \"rsync folders from pod to VM ...\"\nrsync -ra /var/workdir/\
+            \ \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\nrsync -ra \"/shared/\" \"\
+            $SSH_HOST:$BUILD_DIR/volumes/shared/\"\nrsync -ra \"/tekton/results/\"\
+            \ \"$SSH_HOST:$BUILD_DIR/results/\"\n\nmkdir -p scripts\ncat >scripts/script-build.sh\
             \ <<'REMOTESSHEOF'\n#!/bin/sh\n\nTEMP_DIR=\"$HOME/tmp\"\nUSER_BIN_DIR=\"\
             $HOME/bin\"\nBUILDPACK_PROJECTS=\"$HOME/buildpack-repo\"\n\nmkdir -p ${TEMP_DIR}\n\
             mkdir -p ${USER_BIN_DIR}\nmkdir -p ${BUILDPACK_PROJECTS}\n\nexport PATH=$PATH:${USER_BIN_DIR}\n\
@@ -256,9 +266,9 @@ spec:
             ############### - END :: TO BE REVIEWED - #################\n\necho \"\
             ### rsync folders from VM to pod\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\
             \ /var/workdir/\nrsync -ra \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"  \"\
-            /shared/\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\
+            /shared/\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\"         \"/tekton/results/\"\
             \n\necho \"### Export the tekton results\"\necho -n \"$IMAGE\" | tee \"\
-            $(results.IMAGE_URL.path)\ncat /var/workdir/IMAGE_DIGEST | tee \"$(results.IMAGE_DIGEST.path)\"\
+            $(results.IMAGE_URL.path)\"\ncat /var/workdir/IMAGE_DIGEST | tee \"$(results.IMAGE_DIGEST.path)\"\
             \ncat /var/workdir/BASE_IMAGES_DIGESTS | tee \"$(results.BASE_IMAGES_DIGESTS.path)\"\
             \n"
           volumeMounts:

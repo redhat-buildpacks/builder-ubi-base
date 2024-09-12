@@ -78,6 +78,31 @@ job:
         set -eu
         set -o pipefail
         
+        function log() {
+            local color="$1"
+            local message="$2"
+        
+            local RED='\033[0;31m'
+            local GREEN='\033[0;32m'
+            local YELLOW='\033[0;33m'
+            local BLUE='\033[0;34m'
+            local PURPLE='\033[0;35m'
+            local CYAN='\033[0;36m'
+            local RESET='\033[0m'
+        
+            # Calculate the length of the message plus the extra decorations
+            local message_length=${#message}
+            local border_length=$((message_length + 6))
+        
+            # Create the top and bottom border
+            local border=$(printf "%${border_length}s" | tr ' ' '#')
+        
+            # Display the message with the color and borders
+            echo -e "${color}${border}"
+            echo -e "${color}## ${message} ##"
+            echo -e "${border}${reset}"
+        }
+        
         mkdir -p ~/.ssh
         if [ -e "/ssh/error" ]; then
           #no server could be provisioned
@@ -98,14 +123,14 @@ job:
         # Export the args to be passed to the script
         export BUILD_ARGS="$@"
         
-        mkdir -p scripts
         ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
         
-        echo "### rsync folders from pod to VM ..."
+        log GREEN "rsync folders from pod to VM ..."
         rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
         rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
         rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
         
+        mkdir -p scripts
         cat >scripts/script-build.sh <<'REMOTESSHEOF'
         #!/bin/sh
         
@@ -233,7 +258,7 @@ job:
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
         
         echo "### Export the tekton results"
-        echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)
+        echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)"
         cat /var/workdir/IMAGE_DIGEST | tee "$(results.IMAGE_DIGEST.path)"
         cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
         
