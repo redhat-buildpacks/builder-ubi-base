@@ -189,10 +189,10 @@ spec:
             \ -o ServerAliveCountMax=10\"\n\n# Export the args to be passed to the\
             \ script\nexport BUILD_ARGS=\"$@\"\n\nmkdir -p scripts\nssh $SSH_ARGS\
             \ \"$SSH_HOST\" mkdir -p \"$BUILD_DIR/workspaces\" \"$BUILD_DIR/scripts\"\
-            \ \"$BUILD_DIR/volumes\"\n\necho \"### rsync shared folders ...\"\nrsync\
-            \ -ra /var/workdir/ \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\nrsync -ra\
-            \ \"/shared/\" \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"\nrsync -ra \"\
-            /tekton/results/\" \"$SSH_HOST:$BUILD_DIR/results/\"\n\ncat >scripts/script-build.sh\
+            \ \"$BUILD_DIR/volumes\"\n\necho \"### rsync folders from pod to VM ...\"\
+            \nrsync -ra /var/workdir/ \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\n\
+            rsync -ra \"/shared/\" \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"\nrsync\
+            \ -ra \"/tekton/results/\" \"$SSH_HOST:$BUILD_DIR/results/\"\n\ncat >scripts/script-build.sh\
             \ <<'REMOTESSHEOF'\n#!/bin/sh\n\nTEMP_DIR=\"$HOME/tmp\"\nUSER_BIN_DIR=\"\
             $HOME/bin\"\nBUILDPACK_PROJECTS=\"$HOME/buildpack-repo\"\n\nmkdir -p ${TEMP_DIR}\n\
             mkdir -p ${USER_BIN_DIR}\nmkdir -p ${BUILDPACK_PROJECTS}\n\nexport PATH=$PATH:${USER_BIN_DIR}\n\
@@ -216,40 +216,40 @@ spec:
             \ | tar -xz -C ${TEMP_DIR}\nmv ${TEMP_DIR}/paketo-community-builder-ubi-base-*\
             \ ${BUILDPACK_PROJECTS}/builder-ubi-base\ncd ${BUILDPACK_PROJECTS}/builder-ubi-base\n\
             \nfor build_arg in \"${BUILD_ARGS[@]}\"; do\n  PACK_ARGS+=\" $build_arg\"\
-            \ndone\n\necho \"### Start :: Echo args to be passed to pack\"\necho $PACK_ARGS\n\
-            echo \"### End :: Echo args to be passed to pack\"\n\nexport DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock\n\
-            \n# unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536\
-            \ =>\n# unshare -Uf --net --keep-caps -r\necho \"### Unshare version\"\
-            \nunshare -V\n\necho \"pack builder create ${IMAGE} --config builder.toml\
-            \ ${PACK_ARGS}\"\npack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\n\
-            \necho \"### Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
+            \ndone\n\necho \"### Pack extra args: $PACK_ARGS\"\n\nexport DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock\n\
+            \necho \"pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\"\
+            \npack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\n\n\
+            echo \"### Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
             \n\n#echo \"### List konflux-final-image\"\n#ls -la konflux-final-image\n\
             \necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\n\
             echo \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
-            \ volumes/workdir/\"\necho -n \"$IMAGE\" > volumes/workdir/IMAGE_URL\n\
-            podman inspect $IMAGE | jq -r '.[].Digest' > volumes/workdir//IMAGE_DIGEST\n\
-            podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest'\
-            \ > volumes/workdir/BASE_IMAGES_DIGESTS\n\necho \"### Running syft on\
-            \ the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image --output\
-            \ volumes/workdir/cyclonedx-json=sbom-image.json\n\n#echo \"### Show the\
-            \ content of the sbom file\"\n#cat volumes/workdir/sbom-image.json | jq\
-            \ -r '.'\n\nREMOTESSHEOF\nchmod +x scripts/script-build.sh\n\nrsync -ra\
-            \ scripts \"$SSH_HOST:$BUILD_DIR\"\nrsync -ra \"$HOME/.docker/\" \"$SSH_HOST:$BUILD_DIR/.docker/\"\
-            \n\nssh $SSH_ARGS \"$SSH_HOST\" \\\n  \"BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM\
-            \ IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION\
-            \ BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\n###############\
-            \ - BEGIN :: TO BE REVIEWED #################\n# container=$(podman create\
-            \ ${IMAGE})\n# echo \"### Container created: $container from image: ${IMAGE}\"\
-            \n# podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path;\
-            \ podman unmount $container'\n# echo \"### Path of the filesystem extracted\
-            \ from the image\"\n# echo \"### List ${HOME}/shared/container_path\"\n\
-            # ls -la $(cat ${HOME}/shared/container_path)\n# cat ${HOME}/shared/container_path\n\
+            \ volumes/workdir/\"\npwd\nls -la\nls -la volumes\nls -la volumes/workdir\n\
+            \necho -n \"$IMAGE\" > volumes/workdir/IMAGE_URL\npodman inspect $IMAGE\
+            \ | jq -r '.[].Digest' > volumes/workdir/IMAGE_DIGEST\npodman inspect\
+            \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > volumes/workdir/BASE_IMAGES_DIGESTS\n\
+            \necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
+            \ --output volumes/workdir/cyclonedx-json=sbom-image.json\n\n#echo \"\
+            ### Show the content of the sbom file\"\n#cat volumes/workdir/sbom-image.json\
+            \ | jq -r '.'\n\nREMOTESSHEOF\nchmod +x scripts/script-build.sh\n\nrsync\
+            \ -ra scripts \"$SSH_HOST:$BUILD_DIR\"\nrsync -ra \"$HOME/.docker/\" \"\
+            $SSH_HOST:$BUILD_DIR/.docker/\"\n\nssh $SSH_ARGS \"$SSH_HOST\" \\\n  \"\
+            BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION\
+            \ GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\
+            \n############### - BEGIN :: TO BE REVIEWED #################\n# unshare\
+            \ -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>\n\
+            # unshare -Uf --net --keep-caps -r\n# echo \"### Unshare version\"\n#\
+            \ unshare -V\n# container=$(podman create ${IMAGE})\n# echo \"### Container\
+            \ created: $container from image: ${IMAGE}\"\n# podman unshare sh -c 'podman\
+            \ mount $container | tee ${HOME}/shared/container_path; podman unmount\
+            \ $container'\n# echo \"### Path of the filesystem extracted from the\
+            \ image\"\n# echo \"### List ${HOME}/shared/container_path\"\n# ls -la\
+            \ $(cat ${HOME}/shared/container_path)\n# cat ${HOME}/shared/container_path\n\
             # # delete symlinks - they may point outside the container rootfs, messing\
             \ with SBOM scanners\n# find $(cat ${HOME}/shared/container_path) -xtype\
             \ l -delete\n# echo $container > ${HOME}/shared/container_name\n# echo\
             \ \"### Print ${HOME}/shared/container_name\"\n# cat ${HOME}/shared/container_name\n\
             ############### - END :: TO BE REVIEWED - #################\n\necho \"\
-            ### rsync files from VM to pod\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\
+            ### rsync folders from VM to pod\"\nrsync -ra \"$SSH_HOST:$BUILD_DIR/volumes/workdir/\"\
             \ /var/workdir/\nrsync -ra \"$SSH_HOST:$BUILD_DIR/shared/\"  \"/shared/\"\
             \nrsync -ra \"$SSH_HOST:$BUILD_DIR/results/\" \"/tekton/results/\"\n\n\
             echo \"### Export the tekton results\"\necho -n \"$IMAGE\" | tee \"$(results.IMAGE_URL.path)\n\

@@ -101,7 +101,7 @@ job:
         mkdir -p scripts
         ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
         
-        echo "### rsync shared folders ..."
+        echo "### rsync folders from pod to VM ..."
         rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
         rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
         rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
@@ -164,16 +164,9 @@ job:
           PACK_ARGS+=" $build_arg"
         done
         
-        echo "### Start :: Echo args to be passed to pack"
-        echo $PACK_ARGS
-        echo "### End :: Echo args to be passed to pack"
+        echo "### Pack extra args: $PACK_ARGS"
         
         export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
-        
-        # unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>
-        # unshare -Uf --net --keep-caps -r
-        echo "### Unshare version"
-        unshare -V
         
         echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
         pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
@@ -188,8 +181,13 @@ job:
         podman push $IMAGE
         
         echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: volumes/workdir/"
+        pwd
+        ls -la
+        ls -la volumes
+        ls -la volumes/workdir
+        
         echo -n "$IMAGE" > volumes/workdir/IMAGE_URL
-        podman inspect $IMAGE | jq -r '.[].Digest' > volumes/workdir//IMAGE_DIGEST
+        podman inspect $IMAGE | jq -r '.[].Digest' > volumes/workdir/IMAGE_DIGEST
         podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > volumes/workdir/BASE_IMAGES_DIGESTS
         
         echo "### Running syft on the image filesystem"
@@ -209,6 +207,10 @@ job:
            scripts/script-build.sh
         
         ############### - BEGIN :: TO BE REVIEWED #################
+        # unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>
+        # unshare -Uf --net --keep-caps -r
+        # echo "### Unshare version"
+        # unshare -V
         # container=$(podman create ${IMAGE})
         # echo "### Container created: $container from image: ${IMAGE}"
         # podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
@@ -223,7 +225,7 @@ job:
         # cat ${HOME}/shared/container_name
         ############### - END :: TO BE REVIEWED - #################
         
-        echo "### rsync files from VM to pod"
+        echo "### rsync folders from VM to pod"
         rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
         rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
