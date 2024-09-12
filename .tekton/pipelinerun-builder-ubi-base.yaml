@@ -330,13 +330,13 @@ spec:
             echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
             
             ca_bundle=$BUILD_DIR/volumes/trusted-ca/ca-bundle.crt
-            if [ -f "$ca_bundle" ]; then
-              echo "### Using mounted CA bundle: $ca_bundle"
-              cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
-              update-ca-trust
-            fi
+            #if [ -f "$ca_bundle" ]; then
+            #  echo "### Using mounted CA bundle: $ca_bundle"
+            #  cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
+            #  update-ca-trust
+            #fi
       
-            cosign attest --predicate $BUILD_DIR/volumes/workdir/sbom-image.json ${IMAGE_REF}
+            cosign attest --key $ca-bundle --predicate $BUILD_DIR/volumes/workdir/sbom-image.json ${IMAGE_REF} -y
 
             REMOTESSHEOF
             chmod +x scripts/script-build.sh
