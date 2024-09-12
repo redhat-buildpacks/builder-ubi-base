@@ -135,9 +135,10 @@ syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volu
 #echo "### Show the content of the sbom file"
 #cat volumes/workdir/sbom-image.json | jq -r '.'
 
-IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
+REGISTRY_ORG="${IMAGE%:*}"
+IMAGE_REF="${REGISTRY_ORG}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
 echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
-echo "Image reference with sha: $IMAGE_REF"
+echo "Image reference: $IMAGE_REF"
 
 echo "########################################"
 echo "### Add the SBOM to the image"
