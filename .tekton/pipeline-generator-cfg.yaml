@@ -120,8 +120,10 @@ job:
         
         export PATH=$PATH:${USER_BIN_DIR}
         
-        echo "### List $BUILD_DIR/volumes/workdir/"
-        ls -la $BUILD_DIR/volumes/workdir/
+        echo "### List volumes"
+        ls -la 
+        ls -la volumes/
+        ls -la volumes/workdir/
         
         echo "### Podman info ###"
         podman version
