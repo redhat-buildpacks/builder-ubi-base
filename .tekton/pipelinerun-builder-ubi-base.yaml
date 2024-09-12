@@ -296,18 +296,19 @@ spec:
             echo "### Export the image as OCI"
             podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
 
-            echo "### Push the image produced: $IMAGE"
-            podman push $IMAGE
-
             echo "###########################################################"
             echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
             echo "###########################################################"
             echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
+
             podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST
-            set -o
+            IMAGE_DIGEST=$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)
+
             BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
             podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
-            set +o
+
+            echo "### Push the image produced: $IMAGE"
+            podman push "$IMAGE@$IMAGE_DIGEST"
 
             echo "########################################"
             echo "### Running syft on the image filesystem"
