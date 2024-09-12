@@ -116,14 +116,8 @@ job:
         mkdir -p ${TEMP_DIR}
         mkdir -p ${USER_BIN_DIR}
         mkdir -p ${BUILDPACK_PROJECTS}
-        mkdir -p ${HOME}/shared
         
         export PATH=$PATH:${USER_BIN_DIR}
-        
-        echo "### List volumes"
-        ls -la 
-        ls -la volumes/
-        ls -la volumes/workdir/
         
         echo "### Podman info ###"
         podman version
@@ -193,18 +187,16 @@ job:
         echo "### Push the image produced: $IMAGE"
         podman push $IMAGE
         
-        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under $BUILD_DIR/results"
-        ls -la $BUILD_DIR/results
-        touch $BUILD_DIR/results/IMAGE_URL
-        echo -n "$IMAGE" > $BUILD_DIR/results/IMAGE_URL
-        podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/results/IMAGE_DIGEST
-        podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > $BUILD_DIR/results/BASE_IMAGES_DIGESTS
+        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: volumes/workdir/"
+        echo -n "$IMAGE" > volumes/workdir/IMAGE_URL
+        podman inspect $IMAGE | jq -r '.[].Digest' > volumes/workdir//IMAGE_DIGEST
+        podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > volumes/workdir/BASE_IMAGES_DIGESTS
         
         echo "### Running syft on the image filesystem"
-        syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
+        syft -v scan oci-dir:konflux-final-image --output volumes/workdir/cyclonedx-json=sbom-image.json
         
         #echo "### Show the content of the sbom file"
-        #cat sbom-image.json | jq -r '.'
+        #cat volumes/workdir/sbom-image.json | jq -r '.'
         
         REMOTESSHEOF
         chmod +x scripts/script-build.sh
@@ -231,13 +223,15 @@ job:
         # cat ${HOME}/shared/container_name
         ############### - END :: TO BE REVIEWED - #################
         
+        echo "### rsync files from VM to pod"
         rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
         rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
         
-        #cat echo -n "$IMAGE" >  tee "$(results.IMAGE_URL.path)
-        #podman inspect $IMAGE | jq -r '.[].Digest' | tee "$(results.IMAGE_DIGEST.path)"
-        #podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' | tee "$(results.BASE_IMAGES_DIGESTS.path)"
+        echo "### Export the tekton results"
+        echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)
+        cat /var/workdir/IMAGE_DIGEST | tee "$(results.IMAGE_DIGEST.path)"
+        cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
         
 
         
