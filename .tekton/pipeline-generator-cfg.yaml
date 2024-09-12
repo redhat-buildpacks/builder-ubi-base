@@ -73,7 +73,7 @@ job:
           readOnly: false
           emptyDir: "{}"
 
-      scriptFileUrl: https://raw.githubusercontent.com/redhat-buildpacks/builder-ubi-base/main/.tekton/ubi-builder-image.sh
+      scriptFileUrl: "file://ubi-builder-image.sh"
         
 
         
