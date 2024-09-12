@@ -163,7 +163,8 @@ syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volu
 echo "########################################"
 echo "### Add the SBOM to the image"
 echo "########################################"
-cosign attest --predicate $BUILD_DIR/volumes/workdir/sbom-image.json "${IMAGE}@IMAGE_DIGEST"
+IMAGE_DIGEST=$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)
+cosign attest --predicate $BUILD_DIR/volumes/workdir/sbom-image.json "${IMAGE}@${IMAGE_DIGEST}"
 
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
