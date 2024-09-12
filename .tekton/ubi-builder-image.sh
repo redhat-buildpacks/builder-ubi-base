@@ -141,9 +141,10 @@ echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DI
 echo "###########################################################"
 echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
 podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST
-
+set -o
 BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
 podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
+set +o
 
 echo "########################################"
 echo "### Running syft on the image filesystem"
@@ -195,6 +196,10 @@ echo "### Step 4 :: Export results to Tekton"
 echo "##########################################################################################"
 
 echo "### Export the tekton results"
+ls -la /var/workdir/
+cat /var/workdir/IMAGE_DIGEST
+cat /var/workdir/BASE_IMAGES_DIGESTS
+
 echo -n "$IMAGE" | tee "$(results.IMAGE_URL.path)"
 cat /var/workdir/IMAGE_DIGEST | tee "$(results.IMAGE_DIGEST.path)"
 cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
