@@ -163,8 +163,9 @@ syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volu
 echo "########################################"
 echo "### Add the SBOM to the image"
 echo "########################################"
-IMAGE_DIGEST=$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)
-cosign attest --predicate $BUILD_DIR/volumes/workdir/sbom-image.json "${IMAGE}@${IMAGE_DIGEST}"
+IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
+echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
+cosign attest --predicate $BUILD_DIR/volumes/workdir/sbom-image.json "${IMAGE_REF}"
 
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
@@ -217,8 +218,5 @@ cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
 echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
 cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
 
-echo "### IMAGE_DIGEST: ${IMAGE}@$(cat /var/workdir/BASE_IMAGES_DIGESTS)"
-{
-  echo -n "${IMAGE}@"
-  cat "/var/workdir/IMAGE_DIGEST"
-} > "$(results.IMAGE_REF.path)"
+echo "### IMAGE_REF: $(cat /var/workdir/IMAGE_REF)"
+cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
