@@ -200,7 +200,9 @@ spec:
             \ ##\"\nsystemctl --user start podman.socket\nsystemctl status podman.socket\n\
             \necho \"### Installing jq ...\"\ncurl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64\
             \ > ${USER_BIN_DIR}/jq\nchmod +x ${USER_BIN_DIR}/jq\n\necho \"### Install\
-            \ syft\"\ncurl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh\
+            \ tomlq tool ...\"\ncurl -sSL https://github.com/cryptaliagy/tomlq/releases/download/0.1.6/tomlq.amd64.tgz\
+            \ | tar -vxz tq\nmv tq ${USER_BIN_DIR}/tq\n\necho \"### Install syft\"\
+            \ncurl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh\
             \ | sh -s --\n# Not needed as syft is already saved under bin/syft =>\
             \ mv bin/syft ${USER_BIN_DIR}/syft\nsyft --version\n\necho \"### Install\
             \ go ###\"\ncurl -sSL \"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\"\
@@ -223,10 +225,10 @@ spec:
             \n\n#echo \"### List konflux-final-image\"\n#ls -la konflux-final-image\n\
             \necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\n\
             echo \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
-            \ volumes/workdir/\"\npwd\nls -la ../..\n# ls -la $BUILD_DIR/volumes/workdir/\n\
-            \necho -n \"$IMAGE\" > volumes/workdir/IMAGE_URL\npodman inspect $IMAGE\
-            \ | jq -r '.[].Digest' > volumes/workdir/IMAGE_DIGEST\npodman inspect\
-            \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > volumes/workdir/BASE_IMAGES_DIGESTS\n\
+            \ $BUILD_DIR/volumes/workdir/\"\n\necho -n \"$IMAGE\" > $BUILD_DIR/volumes/workdir/IMAGE_URL\n\
+            podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST\n\
+            \nBASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '.\"build-image\"\
+            ')\npodman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS\n\
             \necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
             \ --output volumes/workdir/cyclonedx-json=sbom-image.json\n\n#echo \"\
             ### Show the content of the sbom file\"\n#cat volumes/workdir/sbom-image.json\
@@ -234,16 +236,16 @@ spec:
             \ -ra scripts \"$SSH_HOST:$BUILD_DIR\"\nrsync -ra \"$HOME/.docker/\" \"\
             $SSH_HOST:$BUILD_DIR/.docker/\"\n\nssh $SSH_ARGS \"$SSH_HOST\" \\\n  \"\
             BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION\
-            \ GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS\" \\\n   scripts/script-build.sh\n\
-            \n############### - BEGIN :: TO BE REVIEWED #################\n# unshare\
-            \ -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>\n\
-            # unshare -Uf --net --keep-caps -r\n# echo \"### Unshare version\"\n#\
-            \ unshare -V\n# container=$(podman create ${IMAGE})\n# echo \"### Container\
-            \ created: $container from image: ${IMAGE}\"\n# podman unshare sh -c 'podman\
-            \ mount $container | tee ${HOME}/shared/container_path; podman unmount\
-            \ $container'\n# echo \"### Path of the filesystem extracted from the\
-            \ image\"\n# echo \"### List ${HOME}/shared/container_path\"\n# ls -la\
-            \ $(cat ${HOME}/shared/container_path)\n# cat ${HOME}/shared/container_path\n\
+            \ GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS\" BUILD_DIR=$BUILD_DIR\
+            \ \\\n   scripts/script-build.sh\n\n############### - BEGIN :: TO BE REVIEWED\
+            \ #################\n# unshare -Uf --keep-caps -r --map-users 1,1,65536\
+            \ --map-groups 1,1,65536 =>\n# unshare -Uf --net --keep-caps -r\n# echo\
+            \ \"### Unshare version\"\n# unshare -V\n# container=$(podman create ${IMAGE})\n\
+            # echo \"### Container created: $container from image: ${IMAGE}\"\n# podman\
+            \ unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path;\
+            \ podman unmount $container'\n# echo \"### Path of the filesystem extracted\
+            \ from the image\"\n# echo \"### List ${HOME}/shared/container_path\"\n\
+            # ls -la $(cat ${HOME}/shared/container_path)\n# cat ${HOME}/shared/container_path\n\
             # # delete symlinks - they may point outside the container rootfs, messing\
             \ with SBOM scanners\n# find $(cat ${HOME}/shared/container_path) -xtype\
             \ l -delete\n# echo $container > ${HOME}/shared/container_name\n# echo\

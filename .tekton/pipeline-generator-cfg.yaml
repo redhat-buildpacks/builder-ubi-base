@@ -129,6 +129,10 @@ job:
         echo "### Installing jq ..."
         curl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64 > ${USER_BIN_DIR}/jq
         chmod +x ${USER_BIN_DIR}/jq
+        
+        echo "### Install tomlq tool ..."
+        curl -sSL https://github.com/cryptaliagy/tomlq/releases/download/0.1.6/tomlq.amd64.tgz | tar -vxz tq
+        mv tq ${USER_BIN_DIR}/tq
 
         echo "### Install syft"
         curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
@@ -180,14 +184,13 @@ job:
         echo "### Push the image produced: $IMAGE"
         podman push $IMAGE
         
-        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: volumes/workdir/"
-        pwd
-        ls -la ../..
-        # ls -la $BUILD_DIR/volumes/workdir/
+        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
         
-        echo -n "$IMAGE" > volumes/workdir/IMAGE_URL
-        podman inspect $IMAGE | jq -r '.[].Digest' > volumes/workdir/IMAGE_DIGEST
-        podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > volumes/workdir/BASE_IMAGES_DIGESTS
+        echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
+        podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST
+        
+        BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
+        podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
         
         echo "### Running syft on the image filesystem"
         syft -v scan oci-dir:konflux-final-image --output volumes/workdir/cyclonedx-json=sbom-image.json
@@ -202,7 +205,7 @@ job:
         rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
         
         ssh $SSH_ARGS "$SSH_HOST" \
-          "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" \
+          "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" BUILD_DIR=$BUILD_DIR \
            scripts/script-build.sh
         
         ############### - BEGIN :: TO BE REVIEWED #################
