@@ -189,20 +189,21 @@ spec:
             \ -o ServerAliveCountMax=10\"\n\n# Export the args to be passed to the\
             \ script\nexport BUILD_ARGS=\"$@\"\n\nmkdir -p scripts\nssh $SSH_ARGS\
             \ \"$SSH_HOST\" mkdir -p \"$BUILD_DIR/workspaces\" \"$BUILD_DIR/scripts\"\
-            \ \"$BUILD_DIR/volumes\"\n\necho \"rsync shared folders ...\"\nrsync -ra\
-            \ \"/shared/\" \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"\nrsync -ra \"\
-            /tekton/results/\" \"$SSH_HOST:$BUILD_DIR/results/\"\n\ncat >scripts/script-build.sh\
-            \ <<'REMOTESSHEOF'\n#!/bin/sh\n\nTEMP_DIR=\"$HOME/tmp\"\nUSER_BIN_DIR=\"\
-            $HOME/bin\"\nBUILDPACK_PROJECTS=\"$HOME/buildpack-repo\"\n\nmkdir -p ${TEMP_DIR}\n\
-            mkdir -p ${USER_BIN_DIR}\nmkdir -p ${BUILDPACK_PROJECTS}\nmkdir -p ${HOME}/shared\n\
-            \nexport PATH=$PATH:${USER_BIN_DIR}\n\necho \"### Podman info ###\"\n\
-            podman version\n\necho \"### Start podman.socket ##\"\nsystemctl --user\
-            \ start podman.socket\nsystemctl status podman.socket\n\necho \"### Installing\
-            \ jq ...\"\ncurl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64\
+            \ \"$BUILD_DIR/volumes\" \"$BUILD_DIR/results/\"\n\necho \"rsync shared\
+            \ folders ...\"\nrsync -ra \"/shared/\" \"$SSH_HOST:$BUILD_DIR/volumes/shared/\"\
+            \nrsync -ra \"/tekton/results/\" \"$SSH_HOST:$BUILD_DIR/results/\"\n\n\
+            cat >scripts/script-build.sh <<'REMOTESSHEOF'\n#!/bin/sh\n\nTEMP_DIR=\"\
+            $HOME/tmp\"\nUSER_BIN_DIR=\"$HOME/bin\"\nBUILDPACK_PROJECTS=\"$HOME/buildpack-repo\"\
+            \n\nmkdir -p ${TEMP_DIR}\nmkdir -p ${USER_BIN_DIR}\nmkdir -p ${BUILDPACK_PROJECTS}\n\
+            mkdir -p ${HOME}/shared\n\nexport PATH=$PATH:${USER_BIN_DIR}\n\necho \"\
+            ### Podman info ###\"\npodman version\n\necho \"### Start podman.socket\
+            \ ##\"\nsystemctl --user start podman.socket\nsystemctl status podman.socket\n\
+            \necho \"### Installing jq ...\"\ncurl -sSL https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64\
             \ > ${USER_BIN_DIR}/jq\nchmod +x ${USER_BIN_DIR}/jq\n\necho \"### Install\
             \ syft\"\ncurl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh\
-            \ | sh -s --\nmv bin/syft ${USER_BIN_DIR}/syft\nsyft --version\n\necho\
-            \ \"### Install go ###\"\ncurl -sSL \"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\"\
+            \ | sh -s --\n# Not needed as syft is already saved under bin/syft =>\
+            \ mv bin/syft ${USER_BIN_DIR}/syft\nsyft --version\n\necho \"### Install\
+            \ go ###\"\ncurl -sSL \"https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz\"\
             \ | tar -C ${TEMP_DIR} -xz go\nmkdir -p ${USER_BIN_DIR}/go\nmv ${TEMP_DIR}/go\
             \ ${USER_BIN_DIR}\nchmod +x ${USER_BIN_DIR}/go\n\nmkdir -p $HOME/workspace\n\
             export GOPATH=$HOME/workspace\nexport GOROOT=${USER_BIN_DIR}/go\nexport\

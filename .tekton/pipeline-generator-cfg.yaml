@@ -95,7 +95,7 @@ job:
         export BUILD_ARGS="$@"
         
         mkdir -p scripts
-        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
+        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes" "$BUILD_DIR/results/"
         
         echo "rsync shared folders ..."
         rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
@@ -128,7 +128,7 @@ job:
 
         echo "### Install syft"
         curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
-        mv bin/syft ${USER_BIN_DIR}/syft
+        # Not needed as syft is already saved under bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
         syft --version
         
         echo "### Install go ###"
