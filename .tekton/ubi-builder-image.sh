@@ -135,6 +135,11 @@ syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volu
 #echo "### Show the content of the sbom file"
 #cat volumes/workdir/sbom-image.json | jq -r '.'
 
+echo "########################################"
+echo "### Add the SBOM to the image"
+echo "########################################"
+IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
+
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
