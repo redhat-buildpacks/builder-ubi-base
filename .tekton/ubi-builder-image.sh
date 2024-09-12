@@ -139,6 +139,7 @@ echo "########################################"
 echo "### Add the SBOM to the image"
 echo "########################################"
 IMAGE_REF="${IMAGE}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
+echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
 
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
