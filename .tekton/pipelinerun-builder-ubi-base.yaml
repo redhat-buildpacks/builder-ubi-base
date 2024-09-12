@@ -152,10 +152,10 @@ spec:
       - name: "BUILD_ARGS"
         value:
         - "-v"
-      - name: caTrustConfigMapKey
-        value: ca-bundle.crt
-      - name: caTrustConfigMapName
-      - value: trusted-ca
+      - name: "caTrustConfigMapKey"
+        value: "ca-bundle.crt"
+      - name: "caTrustConfigMapName"
+        value: "trusted-ca"
       runAfter:
       - "prefetch-dependencies"
       taskSpec:
