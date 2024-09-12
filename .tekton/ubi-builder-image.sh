@@ -49,7 +49,7 @@ export BUILD_ARGS="$@"
 
 ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
 
-log GREEN "rsync folders from pod to VM ..."
+echo "### rsync folders from pod to VM ..."
 rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
