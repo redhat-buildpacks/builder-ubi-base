@@ -195,7 +195,7 @@ cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
 echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
 cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
 
-echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
 SBOM_REPO="${IMAGE%:*}"
 SBOM_DIGEST="$(sha256sum /var/workdir/sbom-image.json | cut -d' ' -f1)"
+echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
 echo -n "${SBOM_REPO}@sha256:${SBOM_DIGEST}" | tee "$(results.SBOM_BLOB_URL.path)"
