@@ -218,20 +218,20 @@ spec:
             \ | tar -xz -C ${TEMP_DIR}\nmv ${TEMP_DIR}/paketo-community-builder-ubi-base-*\
             \ ${BUILDPACK_PROJECTS}/builder-ubi-base\ncd ${BUILDPACK_PROJECTS}/builder-ubi-base\n\
             \nfor build_arg in \"${BUILD_ARGS[@]}\"; do\n  PACK_ARGS+=\" $build_arg\"\
-            \ndone\n\necho \"### Pack extra args: $PACK_ARGS\"\n\nexport DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock\n\
-            \necho \"pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\"\
+            \ndone\n\necho \"### Pack extra args: $PACK_ARGS\"\n\necho \"### Execute:\
+            \ pack builder create ...\"\nexport DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock\n\
+            echo \"pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\"\
             \npack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}\n\n\
             echo \"### Export the image as OCI\"\npodman push \"$IMAGE\" \"oci:konflux-final-image:$IMAGE\"\
-            \n\n#echo \"### List konflux-final-image\"\n#ls -la konflux-final-image\n\
-            \necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\n\
-            echo \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
-            \ $BUILD_DIR/volumes/workdir/\"\n\necho -n \"$IMAGE\" > $BUILD_DIR/volumes/workdir/IMAGE_URL\n\
+            \n\necho \"### Push the image produced: $IMAGE\"\npodman push $IMAGE\n\
+            \n\necho \"### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under:\
+            \ $BUILD_DIR/volumes/workdir/\"\necho -n \"$IMAGE\" > $BUILD_DIR/volumes/workdir/IMAGE_URL\n\
             podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST\n\
             \nBASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '.\"build-image\"\
             ')\npodman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS\n\
-            \necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
-            \ --output volumes/workdir/cyclonedx-json=sbom-image.json\n\n#echo \"\
-            ### Show the content of the sbom file\"\n#cat volumes/workdir/sbom-image.json\
+            \n\necho \"### Running syft on the image filesystem\"\nsyft -v scan oci-dir:konflux-final-image\
+            \ --output cyclonedx-json=$BUILD_DIR/volumes/workdir/sbom-image.json\n\
+            \n#echo \"### Show the content of the sbom file\"\n#cat volumes/workdir/sbom-image.json\
             \ | jq -r '.'\n\nREMOTESSHEOF\nchmod +x scripts/script-build.sh\n\nrsync\
             \ -ra scripts \"$SSH_HOST:$BUILD_DIR\"\nrsync -ra \"$HOME/.docker/\" \"\
             $SSH_HOST:$BUILD_DIR/.docker/\"\n\nssh $SSH_ARGS \"$SSH_HOST\" \\\n  \"\

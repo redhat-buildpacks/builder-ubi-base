@@ -170,30 +170,28 @@ job:
         
         echo "### Pack extra args: $PACK_ARGS"
         
+        echo "### Execute: pack builder create ..."
         export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
-        
         echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
         pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
         
         echo "### Export the image as OCI"
         podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
         
-        #echo "### List konflux-final-image"
-        #ls -la konflux-final-image
-        
         echo "### Push the image produced: $IMAGE"
         podman push $IMAGE
         
-        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
         
+        echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
         echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
         podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST
         
         BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
         podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
         
+        
         echo "### Running syft on the image filesystem"
-        syft -v scan oci-dir:konflux-final-image --output volumes/workdir/cyclonedx-json=sbom-image.json
+        syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volumes/workdir/sbom-image.json
         
         #echo "### Show the content of the sbom file"
         #cat volumes/workdir/sbom-image.json | jq -r '.'
