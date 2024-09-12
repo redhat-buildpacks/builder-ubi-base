@@ -174,6 +174,7 @@ echo "### Export the tekton results"
 echo "### IMAGE_URL: $IMAGE"
 echo -n "$IMAGE" > "$(results.IMAGE_URL.path)"
 
-cat /var/workdir/IMAGE_DIGEST | tee "$(results.IMAGE_DIGEST.path)"
+echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
+cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
 
 cat /var/workdir/BASE_IMAGES_DIGESTS | tee "$(results.BASE_IMAGES_DIGESTS.path)"
