@@ -183,21 +183,18 @@ job:
         echo "### Push the image produced: $IMAGE"
         podman push $IMAGE
         
-        #echo "### List ${HOME}/shared/container_path"
-        #ls -la $(cat ${HOME}/shared/container_path)
-        
-        echo "### Running syft on the image filesystem"
-        syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
-        
-        #echo "### Show the content of the sbom file"
-        #cat sbom-image.json | jq -r '.'
-        
         echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under $BUILD_DIR/results"
         ls -la $BUILD_DIR/results
         touch $BUILD_DIR/results/IMAGE_URL
         echo -n "$IMAGE" > $BUILD_DIR/results/IMAGE_URL
         podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/results/IMAGE_DIGEST
         podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > $BUILD_DIR/results/BASE_IMAGES_DIGESTS
+        
+        echo "### Running syft on the image filesystem"
+        syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=sbom-image.json
+        
+        #echo "### Show the content of the sbom file"
+        #cat sbom-image.json | jq -r '.'
         
         REMOTESSHEOF
         chmod +x scripts/script-build.sh
@@ -214,6 +211,8 @@ job:
         # echo "### Container created: $container from image: ${IMAGE}"
         # podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
         # echo "### Path of the filesystem extracted from the image"
+        # echo "### List ${HOME}/shared/container_path"
+        # ls -la $(cat ${HOME}/shared/container_path)
         # cat ${HOME}/shared/container_path
         # # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
         # find $(cat ${HOME}/shared/container_path) -xtype l -delete
