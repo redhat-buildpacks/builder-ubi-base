@@ -68,6 +68,10 @@ job:
           mountPath: /shared
           readOnly: false
           emptyDir: "{}"
+        - name: workdir
+          mountPath: /var/workdir
+          readOnly: false
+          emptyDir: "{}"
 
       script: |
         #!/usr/bin/env bash
@@ -95,9 +99,10 @@ job:
         export BUILD_ARGS="$@"
         
         mkdir -p scripts
-        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes" "$BUILD_DIR/results/"
+        ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" "$BUILD_DIR/volumes"
         
-        echo "rsync shared folders ..."
+        echo "### rsync shared folders ..."
+        rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
         rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
         rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
         
@@ -114,6 +119,9 @@ job:
         mkdir -p ${HOME}/shared
         
         export PATH=$PATH:${USER_BIN_DIR}
+        
+        echo "### List $BUILD_DIR/volumes/workdir/"
+        ls -la $BUILD_DIR/volumes/workdir/
         
         echo "### Podman info ###"
         podman version
@@ -221,6 +229,7 @@ job:
         # cat ${HOME}/shared/container_name
         ############### - END :: TO BE REVIEWED - #################
         
+        rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
         rsync -ra "$SSH_HOST:$BUILD_DIR/shared/"  "/shared/"
         rsync -ra "$SSH_HOST:$BUILD_DIR/results/" "/tekton/results/"
         
