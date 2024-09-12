@@ -230,7 +230,8 @@ spec:
             \ --output cyclonedx-json=sbom-image.json\n\n#echo \"### Show the content\
             \ of the sbom file\"\n#cat sbom-image.json | jq -r '.'\n\necho \"### Export:\
             \ IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under $BUILD_DIR/results\"\
-            \necho -n \"$IMAGE\" > $BUILD_DIR/results/IMAGE_URL\npodman inspect $IMAGE\
+            \nls -la $BUILD_DIR/results\ntouch $BUILD_DIR/results/IMAGE_URL\necho\
+            \ -n \"$IMAGE\" > $BUILD_DIR/results/IMAGE_URL\npodman inspect $IMAGE\
             \ | jq -r '.[].Digest' > $BUILD_DIR/results/IMAGE_DIGEST\npodman inspect\
             \ paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > $BUILD_DIR/results/BASE_IMAGES_DIGESTS\n\
             \nREMOTESSHEOF\nchmod +x scripts/script-build.sh\n\nrsync -ra scripts\

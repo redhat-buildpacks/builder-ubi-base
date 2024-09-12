@@ -193,6 +193,8 @@ job:
         #cat sbom-image.json | jq -r '.'
         
         echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under $BUILD_DIR/results"
+        ls -la $BUILD_DIR/results
+        touch $BUILD_DIR/results/IMAGE_URL
         echo -n "$IMAGE" > $BUILD_DIR/results/IMAGE_URL
         podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/results/IMAGE_DIGEST
         podman inspect paketocommunity/build-ubi-base:0.0.76 | jq -r '.[].Digest' > $BUILD_DIR/results/BASE_IMAGES_DIGESTS
