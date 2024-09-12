@@ -184,31 +184,6 @@ spec:
             set -eu
             set -o pipefail
 
-            function log() {
-                local color="$1"
-                local message="$2"
-
-                local RED='\033[0;31m'
-                local GREEN='\033[0;32m'
-                local YELLOW='\033[0;33m'
-                local BLUE='\033[0;34m'
-                local PURPLE='\033[0;35m'
-                local CYAN='\033[0;36m'
-                local RESET='\033[0m'
-
-                # Calculate the length of the message plus the extra decorations
-                local message_length=${#message}
-                local border_length=$((message_length + 6))
-
-                # Create the top and bottom border
-                local border=$(printf "%${border_length}s" | tr ' ' '#')
-
-                # Display the message with the color and borders
-                echo -e "${color}${border}"
-                echo -e "${color}## ${message} ##"
-                echo -e "${border}${RESET}"
-            }
-
             echo "##########################################################################################"
             echo "### Step 1 :: Configure SSH and rsync folders from tekton to the VM"
             echo "##########################################################################################"
@@ -279,7 +254,7 @@ spec:
             echo "### Install cosign"
             curl -O -sL "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
             mv cosign-linux-amd64 ${USER_BIN_DIR}/cosign
-            sudo chmod +x ${USER_BIN_DIR}/cosign
+            chmod +x ${USER_BIN_DIR}/cosign
             cosign version
 
             echo "### Install go ###"
