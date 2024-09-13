@@ -435,9 +435,9 @@ spec:
         - name: "kind"
           value: "task"
         resolver: "bundles"
-      workspaces:
-      - name: "workspace"
-        workspace: "workspace"
+#      workspaces:
+#      - name: "workspace"
+#        workspace: "workspace"
     - name: "source-build"
       params:
       - name: "BINARY_IMAGE"
