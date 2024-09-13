@@ -156,10 +156,12 @@ spec:
       - "prefetch-dependencies"
       taskSpec:
         results:
-        - description: "Image repository where the built image was pushed"
+        - description: "Image repository and tag where the built image was pushed"
           name: "IMAGE_URL"
         - description: "Digest of the image just built"
           name: "IMAGE_DIGEST"
+        - description: "Image reference of the built image"
+          name: "IMAGE_REF"
         - description: "Digests of the base images used for build"
           name: "BASE_IMAGES_DIGESTS"
         - description: "SBOM Image URL"
