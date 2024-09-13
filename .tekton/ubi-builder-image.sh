@@ -119,13 +119,13 @@ echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DI
 echo "###########################################################"
 echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
 
-podman inspect $IMAGE | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/IMAGE_DIGEST
-
 BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
 podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
 
-echo "### Push the image produced: $IMAGE"
-podman push "$IMAGE"
+echo "### Push the image produced and get its digest: $IMAGE"
+podman push \
+   --digestfile $BUILD_DIR/volumes/workdir/IMAGE_DIGEST \
+   "$IMAGE"
 
 echo "########################################"
 echo "### Running syft on the image filesystem"
@@ -135,9 +135,10 @@ syft -v scan oci-dir:konflux-final-image -o cyclonedx-json > $BUILD_DIR/volumes/
 echo "### Show the content of the sbom file"
 cat $BUILD_DIR/volumes/workdir/sbom-image.json # | jq -r '.'
 
-REGISTRY_ORG="${IMAGE%:*}"
-IMAGE_REF="${REGISTRY_ORG}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
-echo -n ${IMAGE_REF} > $BUILD_DIR/volumes/workdir/IMAGE_REF
+{
+  echo -n "${IMAGE}@"
+  cat "$BUILD_DIR/volumes/workdir/IMAGE_DIGEST"
+} > $BUILD_DIR/volumes/workdir/IMAGE_REF
 echo "Image reference: $IMAGE_REF"
 
 echo "########################################"
@@ -187,11 +188,14 @@ echo "### Step 4 :: Export results to Tekton"
 echo "##########################################################################################"
 
 echo "### Export the tekton results"
-echo "### IMAGE_URL: $(cat /var/workdir/IMAGE_REF)"
-cat /var/workdir/IMAGE_REF > "$(results.IMAGE_URL.path)"
+echo "### IMAGE_URL: $(cat /var/workdir/IMAGE_URL)"
+cat /var/workdir/IMAGE_URL > "$(results.IMAGE_URL.path)"
 
 echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
 cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
+
+echo "### IMAGE_REF: $(cat /var/workdir/IMAGE_REF)"
+cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
 
 echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
 cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
