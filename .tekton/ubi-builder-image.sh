@@ -133,7 +133,7 @@ echo "########################################"
 syft -v scan oci-dir:konflux-final-image --output cyclonedx-json=$BUILD_DIR/volumes/workdir/sbom-image.json
 
 echo "### Show the content of the sbom file"
-cat volumes/workdir/sbom-image.json # | jq -r '.'
+cat $BUILD_DIR/volumes/workdir/sbom-image.json # | jq -r '.'
 
 REGISTRY_ORG="${IMAGE%:*}"
 IMAGE_REF="${REGISTRY_ORG}@$(cat $BUILD_DIR/volumes/workdir/IMAGE_DIGEST)"
