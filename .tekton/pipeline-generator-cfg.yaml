@@ -67,10 +67,6 @@ job:
           mountPath: /ssh
           # readOnly: true ==> The default value is true
           secret: "multi-platform-ssh-$(context.taskRun.name)"
-        - name: shared
-          mountPath: /shared
-          readOnly: false
-          emptyDir: "{}"
         - name: workdir
           mountPath: /var/workdir
           readOnly: false

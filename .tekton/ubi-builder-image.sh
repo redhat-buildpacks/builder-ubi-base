@@ -29,7 +29,6 @@ ssh $SSH_ARGS "$SSH_HOST" mkdir -p "$BUILD_DIR/workspaces" "$BUILD_DIR/scripts" 
 
 echo "### rsync folders from pod to VM ..."
 rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
-rsync -ra "/shared/" "$SSH_HOST:$BUILD_DIR/volumes/shared/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
 echo "##########################################################################################"
@@ -159,28 +158,8 @@ ssh $SSH_ARGS "$SSH_HOST" \
   "BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" BUILD_DIR=$BUILD_DIR \
    scripts/script-build.sh
 
-############### - BEGIN :: TO BE REVIEWED #################
-# unshare -Uf --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 =>
-# unshare -Uf --net --keep-caps -r
-# echo "### Unshare version"
-# unshare -V
-# container=$(podman create ${IMAGE})
-# echo "### Container created: $container from image: ${IMAGE}"
-# podman unshare sh -c 'podman mount $container | tee ${HOME}/shared/container_path; podman unmount $container'
-# echo "### Path of the filesystem extracted from the image"
-# echo "### List ${HOME}/shared/container_path"
-# ls -la $(cat ${HOME}/shared/container_path)
-# cat ${HOME}/shared/container_path
-# # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
-# find $(cat ${HOME}/shared/container_path) -xtype l -delete
-# echo $container > ${HOME}/shared/container_name
-# echo "### Print ${HOME}/shared/container_name"
-# cat ${HOME}/shared/container_name
-############### - END :: TO BE REVIEWED - #################
-
 echo "### rsync folders from VM to pod"
-rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
-rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
+rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
 echo "##########################################################################################"
