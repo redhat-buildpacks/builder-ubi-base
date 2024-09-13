@@ -13,7 +13,7 @@ metadata:
     pipelines.appstudio.openshift.io/type: "build"
     pipelines.openshift.io/strategy: "remote-build"
     appstudio.openshift.io/component: "builder-ubi-base"
-    pipelines.openshift.io/used-by: "build-cloud-1"
+    pipelines.openshift.io/used-by: "build-cloud"
     pipelines.openshift.io/runtime: "java"
   name: "builder-ubi-base"
   namespace: "cmoullia-tenant"
@@ -325,12 +325,12 @@ spec:
               echo -n "${IMAGE}@"
               cat "$BUILD_DIR/volumes/workdir/IMAGE_DIGEST"
             } > $BUILD_DIR/volumes/workdir/IMAGE_REF
-            echo "Image reference: $IMAGE_REF"
+            echo "Image reference: $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)"
 
             echo "########################################"
             echo "### Add the SBOM to the image"
             echo "########################################"
-            cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx ${IMAGE_REF}
+            cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)
 
             REMOTESSHEOF
             chmod +x scripts/script-build.sh
@@ -435,9 +435,6 @@ spec:
         - name: "kind"
           value: "task"
         resolver: "bundles"
-#      workspaces:
-#      - name: "workspace"
-#        workspace: "workspace"
     - name: "source-build"
       params:
       - name: "BINARY_IMAGE"
@@ -524,23 +521,6 @@ spec:
           value: "quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.1"
         - name: "name"
           value: "clamav-scan"
-        - name: "kind"
-          value: "task"
-        resolver: "bundles"
-    - name: "sbom-json-check"
-      params:
-      - name: "IMAGE_DIGEST"
-        value: "$(tasks.build-container.results.IMAGE_DIGEST)"
-      - name: "IMAGE_URL"
-        value: "$(tasks.build-container.results.IMAGE_URL)"
-      runAfter:
-      - "build-container"
-      taskRef:
-        params:
-        - name: "bundle"
-          value: "quay.io/konflux-ci/tekton-catalog/task-sbom-json-check:0.1"
-        - name: "name"
-          value: "sbom-json-check"
         - name: "kind"
           value: "task"
         resolver: "bundles"

@@ -139,12 +139,12 @@ cat $BUILD_DIR/volumes/workdir/sbom-image.json # | jq -r '.'
   echo -n "${IMAGE}@"
   cat "$BUILD_DIR/volumes/workdir/IMAGE_DIGEST"
 } > $BUILD_DIR/volumes/workdir/IMAGE_REF
-echo "Image reference: $IMAGE_REF"
+echo "Image reference: $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)"
 
 echo "########################################"
 echo "### Add the SBOM to the image"
 echo "########################################"
-cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx ${IMAGE_REF}
+cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)
 
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
