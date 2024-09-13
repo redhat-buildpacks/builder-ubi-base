@@ -34,7 +34,9 @@ job:
 
         # Image to use to execute remotely the SSH script using podman run
         - BUILDER_IMAGE: quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275
+
         # Buildpack
+        - REPOSITORY_TO_FETCH: "https://github.com/redhat-buildpacks/builder-ubi-base"
         - PACK_CLI_VERSION: "v0.35.1"
         - GO_VERSION: "1.23.0"
         - BUILD_ARGS:
@@ -54,6 +56,7 @@ job:
       envs:
         - BUILDER_IMAGE: $(params.BUILDER_IMAGE)
         - PLATFORM: $(params.PLATFORM)
+        - REPOSITORY_TO_FETCH: $(params.REPOSITORY_TO_FETCH)
         - IMAGE: $(params.output-image)
         - PACK_CLI_VERSION: $(params.PACK_CLI_VERSION)
         - GO_VERSION: $(params.GO_VERSION)
