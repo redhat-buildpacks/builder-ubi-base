@@ -130,7 +130,7 @@ podman push "$IMAGE"
 echo "########################################"
 echo "### Running syft on the image filesystem"
 echo "########################################"
-syft -v scan oci-dir:konflux-final-image --output cyclonedx-json $BUILD_DIR/volumes/workdir/sbom-image.json
+syft -v scan oci-dir:konflux-final-image -o cyclonedx-json > $BUILD_DIR/volumes/workdir/sbom-image.json
 
 echo "### Show the content of the sbom file"
 cat $BUILD_DIR/volumes/workdir/sbom-image.json # | jq -r '.'
