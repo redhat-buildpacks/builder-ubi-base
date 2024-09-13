@@ -371,8 +371,8 @@ spec:
             echo "##########################################################################################"
 
             echo "### Export the tekton results"
-            echo "### IMAGE_URL: $IMAGE_REF"
-            echo -n "$IMAGE_REF" > "$(results.IMAGE_URL.path)"
+            echo "### IMAGE_URL: $(cat /var/workdir/IMAGE_REF)"
+            cat /var/workdir/IMAGE_REF > "$(results.IMAGE_URL.path)"
 
             echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
             cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
