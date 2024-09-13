@@ -38,7 +38,6 @@ job:
         # Buildpack
         - REPOSITORY_TO_FETCH: "https://github.com/redhat-buildpacks/builder-ubi-base"
         - PACK_CLI_VERSION: "v0.35.1"
-        - GO_VERSION: "1.23.0"
         - BUILD_ARGS:
             - "-v"
       workspaces:
@@ -59,7 +58,6 @@ job:
         - REPOSITORY_TO_FETCH: $(params.REPOSITORY_TO_FETCH)
         - IMAGE: $(params.output-image)
         - PACK_CLI_VERSION: $(params.PACK_CLI_VERSION)
-        - GO_VERSION: $(params.GO_VERSION)
 
       args:
         - $(params.BUILD_ARGS[*])

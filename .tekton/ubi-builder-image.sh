@@ -75,18 +75,6 @@ mv cosign-linux-amd64 ${USER_BIN_DIR}/cosign
 chmod +x ${USER_BIN_DIR}/cosign
 cosign version
 
-echo "### Install go ###"
-curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar -C ${TEMP_DIR} -xz go
-mkdir -p ${USER_BIN_DIR}/go
-mv ${TEMP_DIR}/go ${USER_BIN_DIR}
-chmod +x ${USER_BIN_DIR}/go
-
-mkdir -p $HOME/workspace
-export GOPATH=$HOME/workspace
-export GOROOT=${USER_BIN_DIR}/go
-export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-go version
-
 echo "### Install pack ###"
 curl -sSL "https://github.com/buildpacks/pack/releases/download/${PACK_CLI_VERSION}/pack-${PACK_CLI_VERSION}-linux.tgz" | tar -C ${TEMP_DIR} --no-same-owner -xzv pack
 mv ${TEMP_DIR}/pack ${USER_BIN_DIR}
@@ -158,7 +146,7 @@ rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
 rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
 ssh $SSH_ARGS "$SSH_HOST" \
-  "REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION GO_VERSION=$GO_VERSION BUILD_ARGS=$BUILD_ARGS" BUILD_DIR=$BUILD_DIR \
+  "REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} BUILDER_IMAGE=$BUILDER_IMAGE PLATFORM=$PLATFORM IMAGE=$IMAGE PACK_CLI_VERSION=$PACK_CLI_VERSION BUILD_ARGS=$BUILD_ARGS" BUILD_DIR=$BUILD_DIR \
    scripts/script-build.sh
 
 echo "### rsync folders from VM to pod"
