@@ -95,11 +95,13 @@ echo "### Pack version ###"
 pack --version
 pack config experimental true
 
-echo "### Build the builder image using pack"
+echo "### Fetch the tarball of the buildpack project to build"
+echo "### Git repo: ${REPOSITORY_TO_FETCH}"
 curl -sSL "${REPOSITORY_TO_FETCH}/tarball/main" | tar -xz -C ${TEMP_DIR}
 mv ${TEMP_DIR}/redhat-buildpacks-builder-ubi-base-* ${BUILDPACK_PROJECTS}/builder-ubi-base
 cd ${BUILDPACK_PROJECTS}/builder-ubi-base
 
+echo "### Build the builder image using pack"
 for build_arg in "${BUILD_ARGS[@]}"; do
   PACK_ARGS+=" $build_arg"
 done
