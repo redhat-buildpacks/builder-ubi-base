@@ -132,7 +132,7 @@ systemctl --user start podman.socket
 sleep 20s
 
 systemctl status podman.socket > /dev/null
-...
+echo "## Let's continue ..."
 REMOTESSHEOF
 chmod +x scripts/script-setup.sh
 
