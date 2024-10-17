@@ -132,6 +132,9 @@ systemctl --user start podman.socket
 sleep 20s
 
 systemctl status podman.socket > /dev/null
+
+podman info
+find /run | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 echo "## Let's continue ..."
 REMOTESSHEOF
 chmod +x scripts/script-setup.sh
