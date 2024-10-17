@@ -9,7 +9,7 @@ cd pipeline-dsl-builder
 
 - Set the path to directory where the jar has been build
 ```bash
-QUARKUS_DIR=$HOME/<PATH_TO>/pipeline-dsl-builder/builder/target/quarkus-app/
+QUARKUS_DIR=$HOME/<PATH_TO>/pipeline-dsl-builder/target/quarkus-app
 ```
 
 - Create the tmp directory where files are generated and tasks extracted
