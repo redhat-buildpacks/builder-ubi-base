@@ -55,10 +55,6 @@ export PATH=$PATH:${USER_BIN_DIR}
 echo "### Podman info ###"
 podman version
 
-echo "### Start podman.socket ##"
-systemctl --user start podman.socket
-systemctl status podman.socket
-
 echo "### Install tomlq tool ..."
 curl -sSL https://github.com/cryptaliagy/tomlq/releases/download/0.1.6/tomlq.amd64.tgz | tar -vxz tq
 mv tq ${USER_BIN_DIR}/tq
@@ -140,17 +136,20 @@ echo "##########################################################################
 rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
 rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
+echo "### Start podman.socket ##"
+ssh $SSH_ARGS "$SSH_HOST" systemctl --user start podman.socket
+ssh $SSH_ARGS "$SSH_HOST" systemctl status podman.socket
+
 ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
   -e BUILDER_IMAGE=$BUILDER_IMAGE \
   -e PLATFORM=$PLATFORM \
   -e IMAGE=$IMAGE \
-  -e PACK_CLI_VERSION=$PACK_CLI_VERSION \
   -e BUILD_ARGS=$BUILD_ARGS \
   -e BUILD_DIR=$BUILD_DIR \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
-  -v "$XDG_RUNTIME_DIR/podman/podman.sock:/workdir/podman.sock:Z" \
+  -v "/run/user/1000/podman/podman.sock:/workdir/podman.sock:Z" \
   --user=0 --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
 echo "### rsync folders from VM to pod"
