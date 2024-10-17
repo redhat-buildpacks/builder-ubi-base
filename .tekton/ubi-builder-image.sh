@@ -78,7 +78,7 @@ cat >scripts/script-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
 echo "## Moving to the directory /var/workdir where code source has been extracted from the trusted oci"
-cd /var/workdir
+cd $(workspaces.source.path)
 ls -la
 
 echo "### Build the builder image using pack"
@@ -146,6 +146,7 @@ rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 echo "### Setup VM environment: podman ..."
 ssh $SSH_ARGS "$SSH_HOST" scripts/script-setup.sh
 
+  #-v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" \
 ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
   -e BUILDER_IMAGE=$BUILDER_IMAGE \
@@ -153,14 +154,15 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e IMAGE=$IMAGE \
   -e BUILD_ARGS=$BUILD_ARGS \
   -e BUILD_DIR=$BUILD_DIR \
-  -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" \
+  -v "$BUILD_DIR/workspaces/source:$(workspaces.source.path):Z" \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
   --user=0 --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
 echo "### rsync folders from VM to pod"
-rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
+#rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
+rsync -ra "$SSH_HOST:$BUILD_DIR/workspaces/source/" "$(workspaces.source.path)/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
 echo "##########################################################################################"
