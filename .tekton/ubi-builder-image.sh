@@ -124,16 +124,25 @@ cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cycl
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
+cat >scripts/script-setup.sh <<'REMOTESSHEOF'
+#!/bin/sh
+
+echo "### Start podman.socket ##"
+systemctl --user start podman.socket
+sleep 20s
+
+systemctl status podman.socket
+REMOTESSHEOF
+chmod +x scripts/script-setup.sh
+
 echo "##########################################################################################"
 echo "### Step 3 :: Execute the bash script on the VM"
 echo "##########################################################################################"
 rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
 rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
-echo "### Start podman.socket ..."
-ssh $SSH_ARGS "$SSH_HOST" systemctl --user start podman.socket
-ssh $SSH_ARGS "$SSH_HOST" systemctl status podman.socket
-ssh $SSH_ARGS "$SSH_HOST" ls -la /run/user/1000/podman
+echo "### Setup VM environment: podman ..."
+ssh $SSH_ARGS "$SSH_HOST" scripts/script-setup.sh
 
 ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
@@ -146,7 +155,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1000/podman/podman.sock:/workdir/podman.sock:Z" \
-  --user=0 --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
+  --user=0 --rm "$BUILDER_IMAGE" scripts/script-build.sh "$@"
 
 echo "### rsync folders from VM to pod"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
