@@ -35,6 +35,9 @@ echo "### rsync folders from pod to VM ..."
 rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
+echo "### Content of /var/workdir/"
+ls -la /var/workdir/
+
 echo "##########################################################################################"
 echo "### Step 2 :: Create the bash script to be executed within the VM"
 echo "##########################################################################################"
