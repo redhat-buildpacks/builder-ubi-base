@@ -354,20 +354,24 @@ spec:
             echo "##########################################################################################"
 
             echo "### Export the tekton results"
-            echo "### IMAGE_URL: $(cat /var/workdir/IMAGE_URL)"
-            cat /var/workdir/IMAGE_URL > "$(results.IMAGE_URL.path)"
+            echo "### IMAGE_URL: $(cat $(workspaces.source.path)/IMAGE_URL)"
+            #cat /var/workdir/IMAGE_URL > "$(results.IMAGE_URL.path)"
+            cat $(workspaces.source.path)/IMAGE_URL > "$(results.IMAGE_URL.path)"
 
-            echo "### IMAGE_DIGEST: $(cat /var/workdir/IMAGE_DIGEST)"
-            cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
+            echo "### IMAGE_DIGEST: $(cat $(workspaces.source.path)/IMAGE_DIGEST)"
+            #cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
+            cat $(workspaces.source.path)/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
 
-            echo "### IMAGE_REF: $(cat /var/workdir/IMAGE_REF)"
-            cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
+            echo "### IMAGE_REF: $(cat $(workspaces.source.path)/IMAGE_REF)"
+            #cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
+            cat $(workspaces.source.path)/IMAGE_REF > "$(results.IMAGE_REF.path)"
 
-            echo "### BASE_IMAGES_DIGESTS: $(cat /var/workdir/BASE_IMAGES_DIGESTS)"
-            cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
+            echo "### BASE_IMAGES_DIGESTS: $(cat $(workspaces.source.path)/BASE_IMAGES_DIGESTS)"
+            #cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
+            cat $(workspaces.source.path)/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
 
             SBOM_REPO="${IMAGE%:*}"
-            SBOM_DIGEST="$(sha256sum /var/workdir/sbom-image.json | cut -d' ' -f1)"
+            SBOM_DIGEST="$(sha256sum $(workspaces.source.path)/sbom-image.json | cut -d' ' -f1)"
             echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
             echo -n "${SBOM_REPO}@sha256:${SBOM_DIGEST}" | tee "$(results.SBOM_BLOB_URL.path)"
           volumeMounts:
