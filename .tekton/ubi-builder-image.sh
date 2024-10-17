@@ -130,9 +130,9 @@ echo "##########################################################################
 rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
 rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
-echo "### Start podman.socket ##"
+echo "### Start podman.socket ..."
 ssh $SSH_ARGS "$SSH_HOST" systemctl --user start podman.socket
-ssh $SSH_ARGS "$SSH_HOST" systemctl status podman.socket
+#ssh $SSH_ARGS "$SSH_HOST" systemctl status podman.socket
 
 ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
