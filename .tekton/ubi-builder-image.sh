@@ -32,7 +32,8 @@ export PORT_FORWARD=""
 export PODMAN_PORT_FORWARD=""
 
 echo "### rsync folders from pod to VM ..."
-rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
+# rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
+rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
 echo "### Content of /var/workdir/"
@@ -154,7 +155,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e IMAGE=$IMAGE \
   -e BUILD_ARGS=$BUILD_ARGS \
   -e BUILD_DIR=$BUILD_DIR \
-  -v "$BUILD_DIR/workspaces/source:$(workspaces.source.path):Z" \
+  -v "$BUILD_DIR/volumes/workdir/:$(workspaces.source.path):Z" \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
@@ -162,7 +163,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
 
 echo "### rsync folders from VM to pod"
 #rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
-rsync -ra "$SSH_HOST:$BUILD_DIR/workspaces/source/" "$(workspaces.source.path)/"
+rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
 echo "##########################################################################################"
