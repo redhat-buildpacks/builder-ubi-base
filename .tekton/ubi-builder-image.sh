@@ -141,7 +141,7 @@ echo "##########################################################################
 rsync -ra scripts "$SSH_HOST:$BUILD_DIR"
 rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
-echo "### Setup VM environment: podman ..."
+echo "### Setup VM environment: podman, etc within the VM ..."
 ssh $SSH_ARGS "$SSH_HOST" scripts/script-setup.sh
 
 # -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" => volume used with oci-ta
@@ -161,6 +161,9 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   --security-opt label=disable \
   --security-opt seccomp=unconfined \
   --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
+
+echo "### Execute post build steps within the VM ..."
+ssh $SSH_ARGS "$SSH_HOST" scripts/script-post-build.sh
 
 echo "### rsync folders from VM to pod"
 # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
