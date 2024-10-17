@@ -221,40 +221,44 @@ spec:
             echo "### Step 2 :: Create the bash script to be executed within the VM"
             echo "##########################################################################################"
             mkdir -p scripts
+
+            cat >scripts/script-setup.sh <<'REMOTESSHEOF'
+            #!/bin/sh
+
+            echo "### Start podman.socket and show podman info ##"
+            systemctl --user start podman.socket
+            sleep 10s
+
+            echo "## Podman version"
+            podman version
+
+            echo "## Podman info"
+            podman info
+
+            echo "## Let's continue ..."
+            # echo "### Install tomlq tool ..."
+            # curl -sSL https://github.com/cryptaliagy/tomlq/releases/download/0.1.6/tomlq.amd64.tgz | tar -vxz tq
+            # mv tq ${USER_BIN_DIR}/tq
+            #
+            # echo "### Install syft"
+            # curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+            # # Not needed as syft is already saved under bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
+            # syft --version
+            #
+            # echo "### Install cosign"
+            # curl -O -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
+            # mv cosign-linux-amd64 ${USER_BIN_DIR}/cosign
+            # chmod +x ${USER_BIN_DIR}/cosign
+            # cosign version
+            REMOTESSHEOF
+            chmod +x scripts/script-setup.sh
+
             cat >scripts/script-build.sh <<'REMOTESSHEOF'
             #!/bin/sh
 
-            TEMP_DIR="$HOME/tmp"
-            USER_BIN_DIR="$HOME/bin"
-            BUILDPACK_PROJECTS="$HOME/buildpack-repo"
-
-            mkdir -p ${TEMP_DIR}
-            mkdir -p ${USER_BIN_DIR}
-            mkdir -p ${BUILDPACK_PROJECTS}
-
-            export PATH=$PATH:${USER_BIN_DIR}
-
-            echo "### Podman info ###"
-            podman version
-
-            echo "### Install tomlq tool ..."
-            curl -sSL https://github.com/cryptaliagy/tomlq/releases/download/0.1.6/tomlq.amd64.tgz | tar -vxz tq
-            mv tq ${USER_BIN_DIR}/tq
-
-            echo "### Install syft"
-            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
-            # Not needed as syft is already saved under bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
-            syft --version
-
-            echo "### Install cosign"
-            curl -O -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
-            mv cosign-linux-amd64 ${USER_BIN_DIR}/cosign
-            chmod +x ${USER_BIN_DIR}/cosign
-            cosign version
-
-            echo "### Pack version ###"
-            pack --version
-            pack config experimental true
+            echo "##3 Moving to the directory where code source has been extracted from oci"
+            cd /var/workdir
+            ls -la
 
             echo "### Build the builder image using pack"
             for build_arg in "${BUILD_ARGS[@]}"; do
@@ -265,11 +269,18 @@ spec:
 
             echo "### Execute: pack builder create ..."
             export DOCKER_HOST=unix:///workdir/podman.sock
+            pack config experimental true
+
             echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
             pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
+            REMOTESSHEOF
+            chmod +x scripts/script-build.sh
+
+            cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
+            #!/bin/sh
 
             echo "### Export the image as OCI"
-            podman push "$IMAGE" "oci:konflux-final-image:$IMAGE"
+            podman push "${IMAGE}" "oci:konflux-final-image:$IMAGE"
 
             echo "###########################################################"
             echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
@@ -302,21 +313,8 @@ spec:
             echo "### Add the SBOM to the image"
             echo "########################################"
             cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)
-
             REMOTESSHEOF
-            chmod +x scripts/script-build.sh
-
-            cat >scripts/script-setup.sh <<'REMOTESSHEOF'
-            #!/bin/sh
-
-            echo "### Start podman.socket and show podman info ##"
-            systemctl --user start podman.socket
-            sleep 10s
-
-            podman info
-            echo "## Let's continue ..."
-            REMOTESSHEOF
-            chmod +x scripts/script-setup.sh
+            chmod +x scripts/script-post-build.sh
 
             echo "##########################################################################################"
             echo "### Step 3 :: Execute the bash script on the VM"
