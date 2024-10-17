@@ -156,7 +156,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
-  --user=0 --rm "$BUILDER_IMAGE" scripts/script-build.sh "$@"
+  --user=0 --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
 echo "### rsync folders from VM to pod"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
