@@ -17,7 +17,7 @@ component:
 
 job:
   name: builder-ubi-base
-  description: PipelineRun using the pack cli to build the builder image remotely
+  description: PipelineRun using the pack cli packaged within the paketo-container image to build the builder image remotely
   timeout: "0h15m0s"
 
   params:
@@ -61,7 +61,6 @@ job:
       args:
         - $(params.BUILD_ARGS[*])
 
-      #scriptFileUrl: https://raw.githubusercontent.com/ch007m/pipeline-dsl-builder/main/scripts/ssh-remote.sh
       volumes:
         - name: ssh
           mountPath: /ssh
@@ -72,7 +71,7 @@ job:
           readOnly: false
           emptyDir: "{}"
 
-      scriptFileUrl: "file://ubi-builder-image.sh"
+      scriptFileUrl: "file://ubi-builder-image-2.sh"
         
 
         

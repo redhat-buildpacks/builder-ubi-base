@@ -22,7 +22,7 @@ mkdir -p .tekton/out/flows/konflux
 cd .tekton
 rm -rf out/flows/konflux
 java -jar $QUARKUS_DIR/quarkus-run.jar builder \
-  -c pipeline-generator-cfg.yaml \
+  -c pipeline-generator-1-cfg.yaml \
   -o out/flows
   
 cp out/flows/konflux/remote-build/pipelinerun-builder-ubi-base.yaml .
