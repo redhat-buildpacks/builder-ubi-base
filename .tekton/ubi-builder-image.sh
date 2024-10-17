@@ -127,14 +127,11 @@ chmod +x scripts/script-build.sh
 cat >scripts/script-setup.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
-echo "### Start podman.socket ##"
+echo "### Start podman.socket and show podman info ##"
 systemctl --user start podman.socket
-sleep 20s
-
-systemctl status podman.socket > /dev/null
+sleep 10s
 
 podman info
-find /run | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 echo "## Let's continue ..."
 REMOTESSHEOF
 chmod +x scripts/script-setup.sh
@@ -158,7 +155,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
-  -v "/run/user/1000/podman/podman.sock:/workdir/podman.sock:Z" \
+  -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
   --user=0 --rm "$BUILDER_IMAGE" scripts/script-build.sh "$@"
 
 echo "### rsync folders from VM to pod"
