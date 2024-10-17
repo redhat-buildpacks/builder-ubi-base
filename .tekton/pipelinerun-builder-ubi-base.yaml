@@ -313,7 +313,8 @@ spec:
             rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 
             echo "### Start podman.socket ..."
-            ssh $SSH_ARGS "$SSH_HOST" systemctl start podman && systemctl --user start podman.socket && systemctl status podman.socket
+            ssh $SSH_ARGS "$SSH_HOST" systemctl --user start podman.socket
+            ssh $SSH_ARGS "$SSH_HOST" systemctl status podman.socket
             ssh $SSH_ARGS "$SSH_HOST" ls -la /run/user/1000/podman
 
             ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
