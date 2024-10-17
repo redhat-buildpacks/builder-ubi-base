@@ -493,7 +493,7 @@ spec:
           value: "task"
         resolver: "bundles"
   timeouts:
-    pipeline: "900000000000ns"
+    pipeline: "600000000000ns"
   workspaces:
   - name: "workspace"
     volumeClaimTemplate:

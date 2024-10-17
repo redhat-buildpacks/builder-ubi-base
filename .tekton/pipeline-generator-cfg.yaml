@@ -18,7 +18,7 @@ component:
 job:
   name: builder-ubi-base
   description: PipelineRun using the pack cli packaged within the paketo-container image to build the builder image remotely
-  timeout: "0h15m0s"
+  timeout: "0h10m0s"
 
   params:
     # Konflux param
