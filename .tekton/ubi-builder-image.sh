@@ -94,7 +94,7 @@ export DOCKER_HOST=unix:///workdir/podman.sock
 pack config experimental true
 
 echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
-pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}
+pack builder create ${IMAGE} --config source/builder.toml ${PACK_ARGS}
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
@@ -162,7 +162,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   --user=0 --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
 echo "### rsync folders from VM to pod"
-#rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
+# rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
