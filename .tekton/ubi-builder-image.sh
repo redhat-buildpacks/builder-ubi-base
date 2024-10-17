@@ -36,9 +36,6 @@ echo "### rsync folders from pod to VM ..."
 rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
-echo "### Content of /var/workdir/"
-ls -la /var/workdir/
-
 echo "##########################################################################################"
 echo "### Step 2 :: Create the bash script to be executed within the VM"
 echo "##########################################################################################"
@@ -78,7 +75,7 @@ chmod +x scripts/script-setup.sh
 cat >scripts/script-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
-echo "## Moving to the directory /var/workdir where code source has been extracted from the trusted oci"
+echo "## Moving to the source directory"
 cd $(workspaces.source.path)
 ls -la
 
