@@ -74,7 +74,7 @@ chmod +x scripts/script-setup.sh
 cat >scripts/script-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
-echo "##3 Moving to the directory where code source has been extracted from oci"
+echo "## Moving to the directory /var/workdir where code source has been extracted from the trusted oci"
 cd /var/workdir
 ls -la
 
