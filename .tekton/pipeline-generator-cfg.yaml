@@ -55,7 +55,6 @@ job:
         - PLATFORM: $(params.PLATFORM)
         - REPOSITORY_TO_FETCH: $(params.REPOSITORY_TO_FETCH)
         - IMAGE: $(params.output-image)
-        - PACK_CLI_VERSION: $(params.PACK_CLI_VERSION)
 
       args:
         - $(params.BUILD_ARGS[*])
@@ -70,7 +69,7 @@ job:
           readOnly: false
           emptyDir: "{}"
 
-      scriptFileUrl: "file://ubi-builder-image-2.sh"
+      scriptFileUrl: "file://ubi-builder-image.sh"
         
 
         

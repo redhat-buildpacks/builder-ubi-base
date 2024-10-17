@@ -74,12 +74,6 @@ echo "### Pack version ###"
 pack --version
 pack config experimental true
 
-echo "### Fetch the tarball of the buildpack project to build"
-echo "### Git repo: ${REPOSITORY_TO_FETCH}"
-curl -sSL "${REPOSITORY_TO_FETCH}/tarball/main" | tar -xz -C ${TEMP_DIR}
-mv ${TEMP_DIR}/redhat-buildpacks-builder-ubi-base-* ${BUILDPACK_PROJECTS}/builder-ubi-base
-cd ${BUILDPACK_PROJECTS}/builder-ubi-base
-
 echo "### Build the builder image using pack"
 for build_arg in "${BUILD_ARGS[@]}"; do
   PACK_ARGS+=" $build_arg"
@@ -147,6 +141,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e IMAGE=$IMAGE \
   -e BUILD_ARGS=$BUILD_ARGS \
   -e BUILD_DIR=$BUILD_DIR \
+  -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" \
   -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1000/podman/podman.sock:/workdir/podman.sock:Z" \
