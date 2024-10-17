@@ -329,7 +329,8 @@ spec:
             echo "### Setup VM environment: podman ..."
             ssh $SSH_ARGS "$SSH_HOST" scripts/script-setup.sh
 
-              #-v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" \
+            # -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" => volume used with oci-ta
+            # Adding security-opt to by pass: dial unix /workdir/podman.sock: connect: permission denied
             ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
               -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
               -e BUILDER_IMAGE=$BUILDER_IMAGE \
@@ -341,7 +342,10 @@ spec:
               -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
               -v "$BUILD_DIR/scripts:/scripts:Z" \
               -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
-              --user=0 --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
+              --user=0 \
+              --security-opt label=disable \
+              --security-opt seccomp=unconfined \
+              --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
             echo "### rsync folders from VM to pod"
             # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
