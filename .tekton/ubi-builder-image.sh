@@ -90,16 +90,17 @@ pack config experimental true
 echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
 pack builder create ${IMAGE} --config source/builder.toml ${PACK_ARGS}
 
-echo "### Push the image produced and generate its digest: $IMAGE"
-podman push \
-   --digestfile /shared/IMAGE_DIGEST \
-   "$IMAGE"
-
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
 cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
+
+echo "###########################################################"
+echo "### Push the image produced and generate its digest: $IMAGE"
+podman push \
+   --digestfile $BUILD_DIR/volumes/workdir/IMAGE_DIGEST \
+   "$IMAGE"
 
 echo "###########################################################"
 echo "### Export the image as OCI"
