@@ -32,7 +32,7 @@ job:
         # Konflux
         - PLATFORM: linux-mlarge/amd64 # linux-root/amd64 # We need it in order to configure the multi-arch-platform controller properly - see: https://github.com/redhat-appstudio/infra-deployments/blob/main/components/multi-platform-controller/production/host-config.yaml
         # Image to use to execute remotely the SSH script using podman run
-        - BUILDER_IMAGE: quay.io/redhat-user-workloads/cmoullia-tenant/paketo-container/paketo-container:d81644f0c80a745a4ecf842163408717b1a5cc43
+        - BUILDER_IMAGE: quay.io/redhat-user-workloads/cmoullia-tenant/paketo-container/paketo-container:5f3080dc0e3de2641437932b9c7bfaa260418ce7
 
         # Buildpack
         - REPOSITORY_TO_FETCH: "https://github.com/redhat-buildpacks/builder-ubi-base"
