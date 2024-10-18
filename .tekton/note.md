@@ -74,3 +74,4 @@ cat "/var/workdir"/image-digest | tee $(results.IMAGE_DIGEST.path)
  echo -n "${sbom_repo}@sha256:${sbom_digest}" | tee "$(results.SBOM_BLOB_URL.path)"
 ```
 
+TRIGGER
