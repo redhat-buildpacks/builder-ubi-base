@@ -34,6 +34,7 @@ export PODMAN_PORT_FORWARD=""
 echo "### rsync folders from pod to VM ..."
 # rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
+rsync -ra /shared/ "$SSH_HOST:$BUILD_DIR/volumes/shared/"
 rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
 
 echo "##########################################################################################"
@@ -88,15 +89,22 @@ pack config experimental true
 
 echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
 pack builder create ${IMAGE} --config source/builder.toml ${PACK_ARGS}
+
+echo "### Push the image produced and generate its digest: $IMAGE"
+podman push \
+   --digestfile /shared/IMAGE_DIGEST \
+   "$IMAGE"
+
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
 cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
+echo "###########################################################"
 echo "### Export the image as OCI"
-echo "podman push ${IMAGE} \"oci:konflux-final-image:$IMAGE\""
 podman push "${IMAGE}" "oci:konflux-final-image:$IMAGE"
+echo "###########################################################"
 
 echo "###########################################################"
 echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
@@ -105,11 +113,6 @@ echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
 
 BASE_IMAGE=$(tomljson builder.toml | jq '.stack."build-image"')
 podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
-
-echo "### Push the image produced and get its digest: $IMAGE"
-podman push \
-   --digestfile $BUILD_DIR/volumes/workdir/IMAGE_DIGEST \
-   "$IMAGE"
 
 echo "########################################"
 echo "### Running syft on the image filesystem"
@@ -151,6 +154,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e BUILD_ARGS=$BUILD_ARGS \
   -e BUILD_DIR=$BUILD_DIR \
   -v "$BUILD_DIR/volumes/workdir:$(workspaces.source.path):Z" \
+  -v "$BUILD_DIR/volumes/shared:/shared:Z" \
   -v "$BUILD_DIR/.docker:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
@@ -168,6 +172,7 @@ ssh $SSH_ARGS "$SSH_HOST" \
 echo "### rsync folders from VM to pod"
 # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
+rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/" /shared/
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
 echo "##########################################################################################"
