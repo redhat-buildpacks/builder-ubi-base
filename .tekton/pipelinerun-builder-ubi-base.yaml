@@ -144,7 +144,7 @@ spec:
       - name: "PLATFORM"
         value: "linux-mlarge/amd64"
       - name: "BUILDER_IMAGE"
-        value: "quay.io/redhat-user-workloads/cmoullia-tenant/paketo-container/paketo-container:d81644f0c80a745a4ecf842163408717b1a5cc43"
+        value: "quay.io/redhat-user-workloads/cmoullia-tenant/paketo-container/paketo-container:5f3080dc0e3de2641437932b9c7bfaa260418ce7"
       - name: "REPOSITORY_TO_FETCH"
         value: "https://github.com/redhat-buildpacks/builder-ubi-base"
       - name: "BUILD_ARGS"
@@ -346,7 +346,9 @@ spec:
               --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
             echo "### Execute post build steps within the VM ..."
-            ssh $SSH_ARGS "$SSH_HOST" scripts/script-post-build.sh
+            ssh $SSH_ARGS "$SSH_HOST" \
+              IMAGE=$IMAGE \
+              scripts/script-post-build.sh
 
             echo "### rsync folders from VM to pod"
             # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
