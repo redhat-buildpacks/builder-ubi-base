@@ -104,37 +104,18 @@ cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 echo "###########################################################"
 echo "### Push the image produced and generate its digest: $IMAGE"
 podman push \
-   --digestfile $BUILD_DIR/volumes/workdir/IMAGE_DIGEST \
+   --digestfile /shared/IMAGE_DIGEST \
    "$IMAGE"
 
 echo "###########################################################"
 echo "### Export the image as OCI"
-podman push "${IMAGE}" "oci:konflux-final-image:$IMAGE"
+podman push "${IMAGE}" "oci:/shared/konflux-final-image:$IMAGE"
 echo "###########################################################"
 
 echo "###########################################################"
-echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
+echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS"
 echo "###########################################################"
-echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
-
-echo "########################################"
-echo "### Running syft on the image filesystem"
-echo "########################################"
-syft -v scan oci-dir:konflux-final-image -o cyclonedx-json > $BUILD_DIR/volumes/workdir/sbom-image.json
-
-echo "### Show the content of the sbom file"
-cat $BUILD_DIR/volumes/workdir/sbom-image.json # | jq -r '.'
-
-{
-  echo -n "${IMAGE}@"
-  cat "$BUILD_DIR/volumes/workdir/IMAGE_DIGEST"
-} > $BUILD_DIR/volumes/workdir/IMAGE_REF
-echo "Image reference: $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)"
-
-echo "########################################"
-echo "### Add the SBOM to the image"
-echo "########################################"
-cosign attach sbom --sbom $BUILD_DIR/volumes/workdir/sbom-image.json --type cyclonedx $(cat $BUILD_DIR/volumes/workdir/IMAGE_REF)
+echo -n "$IMAGE" > /shared/IMAGE_URL
 REMOTESSHEOF
 chmod +x scripts/script-post-build.sh
 
@@ -175,8 +156,27 @@ ssh $SSH_ARGS "$SSH_HOST" \
 echo "### rsync folders from VM to pod"
 # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
-rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/" /shared/
+rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
+
+echo "########################################"
+echo "### Running syft on the image filesystem"
+echo "########################################"
+syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
+
+echo "### Show the content of the sbom file"
+cat /shared/sbom-image.json # | jq -r '.'
+
+{
+  echo -n "${IMAGE}@"
+  cat "/shared/IMAGE_DIGEST"
+} > /shared/IMAGE_REF
+echo "Image reference: $(cat /shared/IMAGE_REF)"
+
+echo "########################################"
+echo "### Add the SBOM to the image"
+echo "########################################"
+cosign attach sbom --sbom /shared/sbom-image.json --type cyclonedx $(cat /shared/IMAGE_REF)
 
 echo "##########################################################################################"
 echo "### Step 4 :: Export results to Tekton"
@@ -185,21 +185,21 @@ echo "##########################################################################
 echo "### Export the tekton results"
 echo "### IMAGE_URL: $(cat $(workspaces.source.path)/IMAGE_URL)"
 #cat /var/workdir/IMAGE_URL > "$(results.IMAGE_URL.path)"
-cat $(workspaces.source.path)/IMAGE_URL > "$(results.IMAGE_URL.path)"
+cat /shared/IMAGE_URL > "$(results.IMAGE_URL.path)"
 
 echo "### IMAGE_DIGEST: $(cat $(workspaces.source.path)/IMAGE_DIGEST)"
 #cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
-cat $(workspaces.source.path)/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
+cat /shared/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
 
 echo "### IMAGE_REF: $(cat $(workspaces.source.path)/IMAGE_REF)"
 #cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
-cat $(workspaces.source.path)/IMAGE_REF > "$(results.IMAGE_REF.path)"
+cat /shared/IMAGE_REF > "$(results.IMAGE_REF.path)"
 
 echo "### BASE_IMAGES_DIGESTS: $(cat $(workspaces.source.path)/BASE_IMAGES_DIGESTS)"
 #cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
-cat $(workspaces.source.path)/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
+cat /shared/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
 
 SBOM_REPO="${IMAGE%:*}"
-SBOM_DIGEST="$(sha256sum $(workspaces.source.path)/sbom-image.json | cut -d' ' -f1)"
+SBOM_DIGEST="$(sha256sum /shared/sbom-image.json | cut -d' ' -f1)"
 echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
 echo -n "${SBOM_REPO}@sha256:${SBOM_DIGEST}" | tee "$(results.SBOM_BLOB_URL.path)"
