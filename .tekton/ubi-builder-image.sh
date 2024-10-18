@@ -164,7 +164,9 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
 echo "### Execute post build steps within the VM ..."
-ssh $SSH_ARGS "$SSH_HOST" scripts/script-post-build.sh
+ssh $SSH_ARGS "$SSH_HOST" \
+  IMAGE=$IMAGE \
+  scripts/script-post-build.sh
 
 echo "### rsync folders from VM to pod"
 # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
