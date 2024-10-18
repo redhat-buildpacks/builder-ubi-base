@@ -55,10 +55,6 @@ echo "## Podman info"
 podman info
 
 echo "## Let's continue ..."
-# echo "### Install tomlq tool ..."
-# curl -sSL https://github.com/cryptaliagy/tomlq/releases/download/0.1.6/tomlq.amd64.tgz | tar -vxz tq
-# mv tq ${USER_BIN_DIR}/tq
-#
 # echo "### Install syft"
 # curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
 # # Not needed as syft is already saved under bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
@@ -107,7 +103,7 @@ echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DI
 echo "###########################################################"
 echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
 
-BASE_IMAGE=$(tq -f builder.toml -o json 'stack' | jq -r '."build-image"')
+BASE_IMAGE=$(tomljson builder.toml | jq '.stack."build-image"')
 podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
 
 echo "### Push the image produced and get its digest: $IMAGE"
@@ -154,8 +150,8 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e IMAGE=$IMAGE \
   -e BUILD_ARGS=$BUILD_ARGS \
   -e BUILD_DIR=$BUILD_DIR \
-  -v "$BUILD_DIR/volumes/workdir/:$(workspaces.source.path):Z" \
-  -v "$BUILD_DIR/.docker/:/root/.docker:Z" \
+  -v "$BUILD_DIR/volumes/workdir:$(workspaces.source.path):Z" \
+  -v "$BUILD_DIR/.docker:/root/.docker:Z" \
   -v "$BUILD_DIR/scripts:/scripts:Z" \
   -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
   --user=0 \
@@ -165,6 +161,7 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
 
 echo "### Execute post build steps within the VM ..."
 ssh $SSH_ARGS "$SSH_HOST" \
+  BUILD_DIR=$BUILD_DIR \
   IMAGE=$IMAGE \
   scripts/script-post-build.sh
 
