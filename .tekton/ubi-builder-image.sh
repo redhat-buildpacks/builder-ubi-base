@@ -91,6 +91,9 @@ echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
 unshare -Uf $UNSHARE_ARGS --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 -w source -- \
   pack builder create ${IMAGE} --config source/builder.toml ${PACK_ARGS}
 
+BASE_IMAGE=$(tomljson source/builder.toml | jq '.stack."build-image"')
+podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > /shared/BASE_IMAGES_DIGESTS
+
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
 
@@ -112,9 +115,6 @@ echo "###########################################################"
 echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS under: $BUILD_DIR/volumes/workdir/"
 echo "###########################################################"
 echo -n "$IMAGE" > $BUILD_DIR/volumes/workdir/IMAGE_URL
-
-BASE_IMAGE=$(tomljson builder.toml | jq '.stack."build-image"')
-podman inspect ${BASE_IMAGE} | jq -r '.[].Digest' > $BUILD_DIR/volumes/workdir/BASE_IMAGES_DIGESTS
 
 echo "########################################"
 echo "### Running syft on the image filesystem"
