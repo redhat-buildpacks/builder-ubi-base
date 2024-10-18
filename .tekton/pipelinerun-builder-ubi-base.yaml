@@ -389,12 +389,17 @@ spec:
           - mountPath: "/var/workdir"
             name: "workdir"
             readOnly: false
+          - mountPath: "/shared"
+            name: "shared"
+            readOnly: true
         volumes:
         - name: "ssh"
           secret:
             secretName: "multi-platform-ssh-$(context.taskRun.name)"
         - emptyDir: {}
           name: "workdir"
+        - emptyDir: {}
+          name: "shared"
       workspaces:
       - name: "source"
         workspace: "workspace"

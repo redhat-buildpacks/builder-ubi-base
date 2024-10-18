@@ -68,6 +68,9 @@ job:
           mountPath: /var/workdir
           readOnly: false
           emptyDir: "{}"
+        - name: shared
+          mountPath: /shared
+          emptyDir: "{}"
 
       scriptFileUrl: "file://ubi-builder-image.sh"
         
