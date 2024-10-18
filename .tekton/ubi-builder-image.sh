@@ -99,6 +99,7 @@ cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
 echo "### Export the image as OCI"
+echo "podman push ${IMAGE} \"oci:konflux-final-image:$IMAGE\""
 podman push "${IMAGE}" "oci:konflux-final-image:$IMAGE"
 
 echo "###########################################################"
