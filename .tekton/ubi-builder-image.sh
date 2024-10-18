@@ -88,7 +88,8 @@ export DOCKER_HOST=unix:///workdir/podman.sock
 pack config experimental true
 
 echo "pack builder create ${IMAGE} --config builder.toml ${PACK_ARGS}"
-pack builder create ${IMAGE} --config source/builder.toml ${PACK_ARGS}
+unshare -Uf $UNSHARE_ARGS --keep-caps -r --map-users 1,1,65536 --map-groups 1,1,65536 -w source -- \
+  pack builder create ${IMAGE} --config source/builder.toml ${PACK_ARGS}
 
 REMOTESSHEOF
 chmod +x scripts/script-build.sh
