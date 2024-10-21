@@ -144,7 +144,7 @@ spec:
       - name: "PLATFORM"
         value: "linux-mlarge/amd64"
       - name: "BUILDER_IMAGE"
-        value: "quay.io/redhat-user-workloads/cmoullia-tenant/paketo-container/paketo-container:5f3080dc0e3de2641437932b9c7bfaa260418ce7"
+        value: "quay.io/redhat-user-workloads/cmoullia-tenant/paketo-container/paketo-container:42754301d775863860e282369269c6e471886eb0"
       - name: "REPOSITORY_TO_FETCH"
         value: "https://github.com/redhat-buildpacks/builder-ubi-base"
       - name: "BUILD_ARGS"
