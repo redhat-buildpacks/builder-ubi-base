@@ -143,7 +143,6 @@ ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
   --user=0 \
   --security-opt label=disable \
-  --security-opt seccomp=unconfined \
   --rm "$BUILDER_IMAGE" /scripts/script-build.sh "$@"
 
 echo "### Execute post build steps within the VM ..."
