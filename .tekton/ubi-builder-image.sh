@@ -113,7 +113,7 @@ podman push \
 
 echo "###########################################################"
 echo "### Export the image as OCI"
-podman push "${IMAGE}" "oci:/shared/konflux-final-image:$IMAGE"
+podman push "${IMAGE}" "oci:$BUILD_DIR/volumes/shared/konflux-final-image:$IMAGE"
 echo "###########################################################"
 
 echo "###########################################################"
