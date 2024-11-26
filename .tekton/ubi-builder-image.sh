@@ -55,17 +55,16 @@ podman version
 echo "## Podman info"
 podman info
 
-echo "## Let's continue ..."
-# echo "### Install syft"
-# curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
-# # Not needed as syft is already saved under bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
-# syft --version
-#
-# echo "### Install cosign"
-# curl -O -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
-# mv cosign-linux-amd64 ${USER_BIN_DIR}/cosign
-# chmod +x ${USER_BIN_DIR}/cosign
-# cosign version
+echo "### Install syft"
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s --
+# Not needed as syft is already saved under ~/bin/syft => mv bin/syft ${USER_BIN_DIR}/syft
+syft --version
+
+echo "### Install cosign"
+curl -O -sL https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64
+mv cosign-linux-amd64 ~/bin/cosign
+chmod +x ~/bin/cosign
+cosign version
 REMOTESSHEOF
 chmod +x scripts/script-setup.sh
 
