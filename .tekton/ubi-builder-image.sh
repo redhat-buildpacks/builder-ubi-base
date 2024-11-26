@@ -167,7 +167,7 @@ cat /shared/sbom-image.json # | jq -r '.'
 
 {
   echo -n "${IMAGE}@"
-  cat "/shared/IMAGE_DIGEST"
+  cat "/shared/IMAGE_REF"
 } > /shared/IMAGE_REF
 echo "Image reference: $(cat /shared/IMAGE_REF)"
 
