@@ -101,14 +101,14 @@ cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
 echo "###########################################################"
-echo "### List files: $BUILD_DIR ####"
-ls -la $BUILD_DIR/
-ls -la $BUILD_DIR/volumes
-ls -la $BUILD_DIR/volumes/shared
+#echo "### List files: $BUILD_DIR ####"
+#ls -la $BUILD_DIR/
+#ls -la $BUILD_DIR/volumes
+#ls -la $BUILD_DIR/volumes/shared
 
 echo "### Push the image produced and generate its digest: $IMAGE"
 podman push \
-   --digestfile /shared/IMAGE_DIGEST \
+   --digestfile $BUILD_DIR/volumes/shared/IMAGE_DIGEST \
    "$IMAGE"
 
 echo "###########################################################"
@@ -119,7 +119,7 @@ echo "###########################################################"
 echo "###########################################################"
 echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS"
 echo "###########################################################"
-echo -n "$IMAGE" > /shared/IMAGE_URL
+echo -n "$IMAGE" > $BUILD_DIR/volumes/shared/IMAGE_URL
 REMOTESSHEOF
 chmod +x scripts/script-post-build.sh
 
