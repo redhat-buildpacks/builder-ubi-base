@@ -71,6 +71,7 @@ job:
         - name: shared
           mountPath: /shared
           emptyDir: "{}"
+          readOnly: false
 
       scriptFileUrl: "file://ubi-builder-image.sh"
         

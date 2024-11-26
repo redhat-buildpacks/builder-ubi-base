@@ -101,10 +101,6 @@ cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
 echo "###########################################################"
-#echo "### List files: $BUILD_DIR ####"
-#ls -la $BUILD_DIR/
-#ls -la $BUILD_DIR/volumes
-#ls -la $BUILD_DIR/volumes/shared
 
 echo "### Push the image produced and generate its digest: $IMAGE"
 podman push \
@@ -155,6 +151,9 @@ ssh $SSH_ARGS "$SSH_HOST" \
   BUILD_DIR=$BUILD_DIR \
   IMAGE=$IMAGE \
   scripts/script-post-build.sh
+
+echo "### List files: $BUILD_DIR ####"
+ls -la $BUILD_DIR/volumes/shared
 
 echo "### rsync folders from VM to pod"
 # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"

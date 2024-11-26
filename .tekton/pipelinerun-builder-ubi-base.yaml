@@ -283,10 +283,6 @@ spec:
             #!/bin/sh
 
             echo "###########################################################"
-            #echo "### List files: $BUILD_DIR ####"
-            #ls -la $BUILD_DIR/
-            #ls -la $BUILD_DIR/volumes
-            #ls -la $BUILD_DIR/volumes/shared
 
             echo "### Push the image produced and generate its digest: $IMAGE"
             podman push \
@@ -337,6 +333,9 @@ spec:
               BUILD_DIR=$BUILD_DIR \
               IMAGE=$IMAGE \
               scripts/script-post-build.sh
+
+            echo "### List files: $BUILD_DIR ####"
+            ls -la $BUILD_DIR/volumes/shared
 
             echo "### rsync folders from VM to pod"
             # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
@@ -397,7 +396,7 @@ spec:
             readOnly: false
           - mountPath: "/shared"
             name: "shared"
-            readOnly: true
+            readOnly: false
         volumes:
         - name: "ssh"
           secret:
