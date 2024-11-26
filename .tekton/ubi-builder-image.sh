@@ -152,14 +152,14 @@ ssh $SSH_ARGS "$SSH_HOST" \
   IMAGE=$IMAGE \
   scripts/script-post-build.sh
 
-echo "### List files: $BUILD_DIR ####"
-ls -la $BUILD_DIR/volumes/shared
-
 echo "### rsync folders from VM to pod"
 # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
+
+echo "### List files: /shared ####"
+ls -la /shared
 
 echo "########################################"
 echo "### Running syft on the image filesystem"
