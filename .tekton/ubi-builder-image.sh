@@ -34,8 +34,8 @@ export PODMAN_PORT_FORWARD=""
 echo "### rsync folders from pod to VM ..."
 # rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
-rsync -ra /shared/ "$SSH_HOST:$BUILD_DIR/volumes/shared/"
-rsync -ra "/tekton/results/" "$SSH_HOST:$BUILD_DIR/results/"
+rsync -ra "/shared/"                 "$SSH_HOST:$BUILD_DIR/volumes/shared/"
+rsync -ra "/tekton/results/"         "$SSH_HOST:$BUILD_DIR/results/"
 
 echo "##########################################################################################"
 echo "### Step 2 :: Create the bash script to be executed within the VM"
@@ -101,6 +101,8 @@ cat >scripts/script-post-build.sh <<'REMOTESSHEOF'
 #!/bin/sh
 
 echo "###########################################################"
+echo "### List files: ls -la / ####"
+ls -la /
 echo "### Push the image produced and generate its digest: $IMAGE"
 podman push \
    --digestfile /shared/IMAGE_DIGEST \
