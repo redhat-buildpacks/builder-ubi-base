@@ -177,8 +177,8 @@ spec:
         steps:
         - args:
           - "$(params.BUILD_ARGS[*])"
-          #image: "quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275"
-          image: quay.io/redhat-user-workloads/konflux-build-pipeli-tenant/paketo-container:ea8ddb8818bb4a55546927e7674b0362dabd6342
+          image: "quay.io/konflux-ci/buildah-task:latest@sha256:860a239c5f25376a435a514ae6d53a5c75b1fa492461d17774e9b7cb32d1e275"
+          #image: quay.io/redhat-user-workloads/konflux-build-pipeli-tenant/paketo-container:ea8ddb8818bb4a55546927e7674b0362dabd6342
           name: "run-script"
           script: |-
             #!/usr/bin/env bash
@@ -329,54 +329,13 @@ spec:
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
-            echo "### List files: /shared ####"
-            ls -la /shared
-
-            echo "########################################"
-            echo "### Running syft on the image filesystem"
-            echo "########################################"
-            ls -la /usr/bin
-            /usr/bin/syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
-
-            echo "### Show the content of the sbom file"
-            cat /shared/sbom-image.json # | jq -r '.'
-
-            {
-              echo -n "${IMAGE}@"
-              cat "/shared/IMAGE_REF"
-            } > /shared/IMAGE_REF
-            echo "Image reference: $(cat /shared/IMAGE_REF)"
-
-            echo "########################################"
-            echo "### Add the SBOM to the image"
-            echo "########################################"
-            /usr/bin/cosign attach sbom --sbom /shared/sbom-image.json --type cyclonedx $(cat /shared/IMAGE_REF)
-
-            echo "##########################################################################################"
-            echo "### Step 4 :: Export results to Tekton"
-            echo "##########################################################################################"
-
-            echo "### Export the tekton results"
-            echo "### IMAGE_URL: $(cat $(workspaces.source.path)/IMAGE_URL)"
-            #cat /var/workdir/IMAGE_URL > "$(results.IMAGE_URL.path)"
-            cat /shared/IMAGE_URL > "$(results.IMAGE_URL.path)"
-
-            echo "### IMAGE_DIGEST: $(cat $(workspaces.source.path)/IMAGE_DIGEST)"
-            #cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
-            cat /shared/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
-
-            echo "### IMAGE_REF: $(cat $(workspaces.source.path)/IMAGE_REF)"
-            #cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
-            cat /shared/IMAGE_REF > "$(results.IMAGE_REF.path)"
-
-            echo "### BASE_IMAGES_DIGESTS: $(cat $(workspaces.source.path)/BASE_IMAGES_DIGESTS)"
-            #cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
-            cat /shared/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
-
-            SBOM_REPO="${IMAGE%:*}"
-            SBOM_DIGEST="$(sha256sum /shared/sbom-image.json | cut -d' ' -f1)"
-            echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
-            echo -n "${SBOM_REPO}@sha256:${SBOM_DIGEST}" | tee "$(results.SBOM_BLOB_URL.path)"
+            echo "### Mount from the image the file system of: $IMAGE"
+            buildah images
+            container=$(buildah from --pull-never "$IMAGE")
+            buildah mount "$container" | tee /shared/container_path
+            # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
+            find $(cat /shared/container_path) -xtype l -delete
+            echo $container > /shared/container_name
           volumeMounts:
           - mountPath: "/ssh"
             name: "ssh"
@@ -387,6 +346,33 @@ spec:
           - mountPath: "/shared"
             name: "shared"
             readOnly: false
+        - computeResources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 500m
+              memory: 1Gi
+          image: registry.access.redhat.com/rh-syft-tech-preview/syft-rhel9:1.4.1@sha256:34d7065427085a31dc4949bd283c001b91794d427e1e4cdf1b21ea4faf9fee3f
+          name: sbom-syft-generate
+          script: |
+            #!/bin/bash
+            set -e
+            if [ "${IMAGE_APPEND_PLATFORM}" == "true" ]; then
+              IMAGE="${IMAGE}-${PLATFORM//[^a-zA-Z0-9]/-}"
+              export IMAGE
+            fi
+            echo "Running syft on the source directory"
+            syft dir:"/var/workdir/$SOURCE_CODE_DIR/$CONTEXT" --output cyclonedx-json="/var/workdir/sbom-source.json"
+            echo "Running syft on the image filesystem"
+            syft dir:"$(cat /shared/container_path)" --output cyclonedx-json="/var/workdir/sbom-image.json"
+          volumeMounts:
+            - mountPath: /var/lib/containers
+              name: varlibcontainers
+            - mountPath: /shared
+              name: shared
+          workingDir: /var/workdir/source
+
         volumes:
         - name: "ssh"
           secret:
