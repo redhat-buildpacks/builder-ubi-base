@@ -329,7 +329,7 @@ spec:
             echo "##########################################################################################"
             echo "Pull the image from the OCI storage"
             echo "##########################################################################################"
-            podman pull "oci:/shared/konflux-final-image:$IMAGE"
+            buildah pull "oci:/shared/konflux-final-image:$IMAGE"
           securityContext:
             capabilities:
               add:
