@@ -377,10 +377,12 @@ spec:
         - name: "ssh"
           secret:
             secretName: "multi-platform-ssh-$(context.taskRun.name)"
-        - emptyDir: {}
-          name: "workdir"
-        - emptyDir: {}
-          name: "shared"
+        - name: "workdir"
+          emptyDir: {}
+        - name: "shared"
+          emptyDir: {}
+        - name: "varlibcontainers"
+          emptyDir: {}
       workspaces:
       - name: "source"
         workspace: "workspace"
@@ -513,3 +515,4 @@ spec:
   - name: "git-auth"
     secret:
       secretName: "{{ git_auth_secret }}"
+
