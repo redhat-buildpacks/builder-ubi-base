@@ -283,7 +283,7 @@ spec:
             echo "###########################################################"
 
             echo "###########################################################"
-            echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS"
+            echo "### Export: IMAGE_URL"
             echo "###########################################################"
             echo -n "$IMAGE" > $BUILD_DIR/volumes/shared/IMAGE_URL
             REMOTESSHEOF
@@ -352,12 +352,19 @@ spec:
               IMAGE="${IMAGE}-${PLATFORM//[^a-zA-Z0-9]/-}"
               export IMAGE
             fi
+            echo "##########################################################################################"
             echo "### Running syft on the source directory"
+            echo "##########################################################################################"
             syft dir:"$(workspaces.source.path)" --output cyclonedx-json="/shared/sbom-source.json"
             
+            echo "##########################################################################################"
             echo "### Running syft on the image filesystem"
+            echo "##########################################################################################"
             # syft dir:"$(cat /shared/container_path)" --output cyclonedx-json="/shared/sbom-image.json"
-            syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
+            syft scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
+            
+            ls -la /shared/sbom-image.json
+            ls -la /shared/sbom-source.json
 
           volumeMounts:
             - mountPath: /shared
