@@ -325,11 +325,7 @@ spec:
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
-            
-            echo "##########################################################################################"
-            echo "Pull the image from the OCI storage."
-            echo "##########################################################################################"
-            buildah pull "oci:/shared/konflux-final-image:$IMAGE"
+
           securityContext:
             capabilities:
               add:
@@ -464,8 +460,14 @@ spec:
             cd /shared
 
             echo "##########################################################################################"
+            echo "Pull the image from the OCI storage."
+            echo "##########################################################################################"
+            buildah pull $IMAGE
+            
+            echo "##########################################################################################"
             echo "## Get base_image_name, base_image_digest. Copy within the container of the image the sbom"
             echo "##########################################################################################"
+
             base_image_name=$(buildah inspect --format '{{ index .ImageAnnotations "org.opencontainers.image.base.name"}}' $IMAGE | cut -f1 -d'@')
             base_image_digest=$(buildah inspect --format '{{ index .ImageAnnotations "org.opencontainers.image.base.digest"}}' $IMAGE)
             container=$(buildah from --pull-never $IMAGE)
