@@ -329,9 +329,11 @@ spec:
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
-            echo "### Mount from the image the file system of: $IMAGE"
+            echo "### Pull image build "
             buildah pull $IMAGE
             buildah images
+            
+            echo "### Mount the file system of the $IMAGE using a container and share the container_path"
             container=$(buildah from --pull-never "$IMAGE")
             buildah mount "$container" | tee /shared/container_path
             # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
