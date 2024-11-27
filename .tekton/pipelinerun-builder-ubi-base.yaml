@@ -327,7 +327,7 @@ spec:
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
             
             echo "##########################################################################################"
-            echo "Pull the image from the OCI storage"
+            echo "Pull the image from the OCI storage."
             echo "##########################################################################################"
             buildah pull "oci:/shared/konflux-final-image:$IMAGE"
           securityContext:
