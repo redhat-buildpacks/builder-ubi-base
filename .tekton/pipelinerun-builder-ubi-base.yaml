@@ -345,7 +345,8 @@ spec:
             echo "########################################"
             echo "### Running syft on the image filesystem"
             echo "########################################"
-            syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
+            ls -la /usr/bin
+            /usr/bin/syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
 
             echo "### Show the content of the sbom file"
             cat /shared/sbom-image.json # | jq -r '.'
@@ -359,7 +360,7 @@ spec:
             echo "########################################"
             echo "### Add the SBOM to the image"
             echo "########################################"
-            cosign attach sbom --sbom /shared/sbom-image.json --type cyclonedx $(cat /shared/IMAGE_REF)
+            /usr/bin/cosign attach sbom --sbom /shared/sbom-image.json --type cyclonedx $(cat /shared/IMAGE_REF)
 
             echo "##########################################################################################"
             echo "### Step 4 :: Export results to Tekton"
