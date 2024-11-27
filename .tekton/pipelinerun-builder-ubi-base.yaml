@@ -458,6 +458,9 @@ spec:
             
             cd /shared
 
+            echo "##########################################################################################"
+            echo "## Get base_image_name, base_image_digest. CXopy within the container of the image the sbom"
+            echo "##########################################################################################"
             base_image_name=$(buildah inspect --format '{{ index .ImageAnnotations "org.opencontainers.image.base.name"}}' $IMAGE | cut -f1 -d'@')
             base_image_digest=$(buildah inspect --format '{{ index .ImageAnnotations "org.opencontainers.image.base.digest"}}' $IMAGE)
             container=$(buildah from --pull-never $IMAGE)
@@ -471,7 +474,9 @@ spec:
 
             buildah commit "${BUILDAH_ARGS[@]}" $container $IMAGE
 
+            echo "##########################################################################################"
             echo "Pushing to ${IMAGE%:*}:${TASKRUN_NAME}"
+            echo "##########################################################################################"
             if ! retry buildah push \
               --tls-verify="$TLSVERIFY" \
               "$IMAGE" \
@@ -480,7 +485,9 @@ spec:
               exit 1
             fi
 
+            echo "##########################################################################################"
             echo "Pushing to ${IMAGE}"
+            echo "##########################################################################################"
             if ! retry buildah push \
               --tls-verify="$TLSVERIFY" \
               --digestfile "/shared/image-digest" "$IMAGE" \
