@@ -350,6 +350,8 @@ spec:
           - mountPath: "/shared"
             name: "shared"
             readOnly: false
+          - mountPath: /var/lib/containers
+            name: varlibcontainers
         - computeResources:
             limits:
               cpu: "2"
