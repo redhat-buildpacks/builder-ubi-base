@@ -325,6 +325,11 @@ spec:
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
+            
+            echo "##########################################################################################"
+            echo "Pull the image from the OCI storage
+            echo "##########################################################################################"
+            podman pull "oci:/shared/konflux-final-image:$IMAGE"
           securityContext:
             capabilities:
               add:
