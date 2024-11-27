@@ -372,18 +372,17 @@ spec:
               export IMAGE
             fi
             echo "### Running syft on the source directory"
-            syft dir:"/var/workdir/$SOURCE_CODE_DIR/$CONTEXT" --output cyclonedx-json="/var/workdir/sbom-source.json"
+            syft dir:"$(workspaces.source.path)" --output cyclonedx-json="/shared/sbom-source.json"
             
             echo "### Running syft on the image filesystem"
-            # syft dir:"$(cat /shared/container_path)" --output cyclonedx-json="/var/workdir/sbom-image.json"
-            syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /var/workdir/sbom-image.json
+            # syft dir:"$(cat /shared/container_path)" --output cyclonedx-json="/shared/sbom-image.json"
+            syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
 
           volumeMounts:
             - mountPath: /var/lib/containers
               name: varlibcontainers
             - mountPath: /shared
               name: shared
-          workingDir: /var/workdir/source
 
         volumes:
         - name: "ssh"
