@@ -215,7 +215,6 @@ spec:
             export PODMAN_PORT_FORWARD=""
 
             echo "### rsync folders from pod to VM ..."
-            # rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
             rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
             rsync -ra "/shared/"                 "$SSH_HOST:$BUILD_DIR/volumes/shared/"
             rsync -ra "/tekton/results/"         "$SSH_HOST:$BUILD_DIR/results/"
@@ -299,7 +298,6 @@ spec:
             echo "### Setup VM environment: podman, etc within the VM ..."
             ssh $SSH_ARGS "$SSH_HOST" scripts/script-setup.sh
 
-            # -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" => volume used with oci-ta
             # Adding security-opt to by pass: dial unix /workdir/podman.sock: connect: permission denied
             ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
               -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
@@ -324,20 +322,9 @@ spec:
               scripts/script-post-build.sh
 
             echo "### rsync folders from VM to pod"
-            # rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
-
-            # echo "### Pull image build "
-            # buildah pull $IMAGE
-            # buildah images
-            
-            # echo "### Mount the file system of the $IMAGE using a container and share the container_path"
-            # container=$(buildah from --pull-never "$IMAGE")
-            # buildah mount "$container" | tee /shared/container_path
-            # # delete symlinks - they may point outside the container rootfs, messing with SBOM scanners
-            # find $(cat /shared/container_path) -xtype l -delete
           securityContext:
             capabilities:
               add:
@@ -346,14 +333,8 @@ spec:
           - mountPath: "/ssh"
             name: "ssh"
             readOnly: true
-          - mountPath: "/var/workdir"
-            name: "workdir"
-            readOnly: false
           - mountPath: "/shared"
             name: "shared"
-            readOnly: false
-          - mountPath: /var/lib/containers
-            name: varlibcontainers
             readOnly: false
         - computeResources:
             limits:
@@ -379,8 +360,6 @@ spec:
             syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
 
           volumeMounts:
-            - mountPath: /var/lib/containers
-              name: varlibcontainers
             - mountPath: /shared
               name: shared
 
