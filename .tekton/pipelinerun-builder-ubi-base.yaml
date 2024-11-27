@@ -330,6 +330,7 @@ spec:
             rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
             echo "### Mount from the image the file system of: $IMAGE"
+            buildah pull $IMAGE
             buildah images
             container=$(buildah from --pull-never "$IMAGE")
             buildah mount "$container" | tee /shared/container_path
