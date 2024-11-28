@@ -18,6 +18,9 @@ spec:
       description: The VM OS type to be used to run the podman container doing the build
       type: string
       default: "linux-mlarge/amd64"
+    - name: IMAGE
+      description: Reference of the image that pack will produce.
+      type: string
     - name: "REPOSITORY_TO_FETCH"
       description: The paketo ubi builder repository to fetch
       type: string
