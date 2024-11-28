@@ -27,6 +27,10 @@ spec:
         dependencies.
       default: ""
       type: string
+    - name: CONTEXT
+      description: Path to the directory to use as context.
+      default: .
+      type: string
     - name: IMAGE
       description: Reference of the image that pack will produce.
       type: string
@@ -37,6 +41,10 @@ spec:
     - name: SOURCE_ARTIFACT
       description: The Trusted Artifact URI pointing to the artifact with
         the application source code.
+      type: string
+    - name: SOURCE_CODE_DIR
+      description: The directory containing the code source
+      default: source
       type: string
     - name: TLSVERIFY
       description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
@@ -97,6 +105,10 @@ spec:
         value: "$(params.IMAGE)"
       - name: "TLSVERIFY"
         value: "$(params.TLSVERIFY)"
+      - name: CONTEXT
+        value: $(params.CONTEXT)
+      - name: SOURCE_CODE_DIR
+        value: $(params.SOURCE_CODE_DIR)
     volumeMounts:
       - mountPath: /shared
         name: shared
@@ -147,7 +159,8 @@ spec:
           export PODMAN_PORT_FORWARD=""
           
           echo "### rsync folders from pod to VM ..."
-          rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
+          #rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
+          rsync -ra "/var/workdir/"            "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
           rsync -ra "/shared/"                 "$SSH_HOST:$BUILD_DIR/volumes/shared/"
           rsync -ra  "/mnt/trusted-ca/"        "$SSH_HOST:$BUILD_DIR/volumes/trusted-ca/"
           rsync -ra "/tekton/results/"         "$SSH_HOST:$BUILD_DIR/results/"
@@ -176,7 +189,6 @@ spec:
           #!/bin/sh
           
           echo "## Moving to the source directory"
-          cd $(workspaces.source.path)
           ls -la
           
           echo "### Build the builder image using pack"
@@ -238,7 +250,7 @@ spec:
             -e IMAGE=$IMAGE \
             -e BUILD_ARGS=$BUILD_ARGS \
             -e BUILD_DIR=$BUILD_DIR \
-            -v "$BUILD_DIR/volumes/workdir:$(workspaces.source.path):Z" \
+            -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" \
             -v "$BUILD_DIR/volumes/shared:/shared:Z" \
             -v "$BUILD_DIR/.docker:/root/.docker:Z" \
             -v "$BUILD_DIR/volumes/trusted-ca:/mnt/trusted-ca:Z" \
@@ -255,7 +267,8 @@ spec:
             scripts/script-post-build.sh
           
           echo "### rsync folders from VM to pod"
-          rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
+          #rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
+          rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" /var/workdir/
           rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
           rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
 
@@ -293,7 +306,7 @@ spec:
           echo "##########################################################################################"
           echo "### Running syft on the source directory"
           echo "##########################################################################################"
-          syft dir:"$(workspaces.source.path)" --output cyclonedx-json="/shared/sbom-source.json"
+          syft dir:"/var/workdir/$SOURCE_CODE_DIR/$CONTEXT" --output cyclonedx-json="/shared/sbom-source.json"
           
           echo "##########################################################################################"
           echo "### Running syft on the image filesystem"
