@@ -35,6 +35,8 @@ spec:
     value: "quay.io/redhat-user-workloads/cmoullia-tenant/buildpack-remote/builder-ubi-base:{{revision}}"
   - name: "TLSVERIFY"
     value: "true"
+  - name: cachi2-log-level
+    value: info
   pipelineSpec:
     finally:
     - name: "show-sbom"
