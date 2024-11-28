@@ -462,7 +462,7 @@ spec:
             echo "##########################################################################################"
             echo "Pull the image from the OCI storage."
             echo "##########################################################################################"
-            buildah pull $IMAGE
+            buildah --storage-driver vfs pull $IMAGE
             
             echo "##########################################################################################"
             echo "## Copy within the container of the image the sbom files"
