@@ -39,6 +39,8 @@ spec:
     value: info
   - name: dockerfile
     value: ""
+  - name: path-context
+    value: ""
   pipelineSpec:
     finally:
     - name: "show-sbom"
@@ -384,6 +386,7 @@ spec:
           - name: kind
             value: task
         resolver: bundles
+
     - name: push-dockerfile
       params:
         - name: IMAGE
