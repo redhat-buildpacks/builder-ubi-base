@@ -201,9 +201,7 @@ spec:
             value: main
           - name: pathInRepo
             value: .tekton/build-paketo-ubi-builder.yaml
-      workspaces:
-      - name: "source"
-        workspace: "workspace"
+
     - name: build-image-index
       params:
         - name: IMAGE

@@ -92,9 +92,6 @@ spec:
       name: trusted-ca
     - name: workdir
       emptyDir: {}
-  workspaces:
-    - name: source
-      description: Workspace containing the source code to build.
   stepTemplate:
     env:
       - name: "BUILDER_IMAGE"
@@ -189,7 +186,9 @@ spec:
           #!/bin/sh
           
           echo "## Moving to the source directory"
+          pwd
           ls -la
+          ls -la ..
           
           echo "### Build the builder image using pack"
           for build_arg in "${BUILD_ARGS[@]}"; do
