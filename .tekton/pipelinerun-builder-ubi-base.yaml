@@ -33,6 +33,8 @@ spec:
     value: ""
   - name: "output-image"
     value: "quay.io/redhat-user-workloads/cmoullia-tenant/buildpack-remote/builder-ubi-base:{{revision}}"
+  - name: "TLSVERIFY"
+    value: "true"
   pipelineSpec:
     finally:
     - name: "show-sbom"
@@ -174,6 +176,8 @@ spec:
             value: "$(params.REPOSITORY_TO_FETCH)"
           - name: "IMAGE"
             value: "$(params.output-image)"
+          - name: TLSVERIFY
+            value: $(params.TLSVERIFY)
         steps:
         - args:
           - "$(params.BUILD_ARGS[*])"
@@ -483,7 +487,7 @@ spec:
 
             buildah --storage-driver vfs commit "${BUILDAH_ARGS[@]}" $container $IMAGE
             set +x
-            echo "##########################################################################################"
+            echo "######################################################$TLSVERIFY####################################"
             echo "Pushing to ${IMAGE%:*}:${TASKRUN_NAME}"
             echo "##########################################################################################"
             if ! retry buildah push \
