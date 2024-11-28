@@ -42,6 +42,15 @@ spec:
       description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
       type: string
       default: "true"
+    - name: caTrustConfigMapKey
+      description: The name of the key in the ConfigMap that contains the CA bundle
+        data.
+      type: string
+      default: ca-bundle.crt
+    - name: caTrustConfigMapName
+      description: The name of the ConfigMap to read CA bundle data from.
+      type: string
+      default: trusted-ca
   results:
     - name: "IMAGE_URL"
       description: "Image repository and tag where the built image was pushed"
@@ -66,6 +75,13 @@ spec:
       emptyDir: {}
     - name: "varlibcontainers"
       emptyDir: {}
+    - configMap:
+        items:
+          - key: $(params.caTrustConfigMapKey)
+            path: ca-bundle.crt
+        name: $(params.caTrustConfigMapName)
+        optional: true
+      name: trusted-ca
   workspaces:
     - name: source
       description: Workspace containing the source code to build.
@@ -126,6 +142,7 @@ spec:
           echo "### rsync folders from pod to VM ..."
           rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
           rsync -ra "/shared/"                 "$SSH_HOST:$BUILD_DIR/volumes/shared/"
+          rsync -ra  "/mnt/trusted-ca/"        "$SSH_HOST:$BUILD_DIR/volumes/trusted-ca/"
           rsync -ra "/tekton/results/"         "$SSH_HOST:$BUILD_DIR/results/"
           
           echo "##########################################################################################"
@@ -217,6 +234,7 @@ spec:
             -v "$BUILD_DIR/volumes/workdir:$(workspaces.source.path):Z" \
             -v "$BUILD_DIR/volumes/shared:/shared:Z" \
             -v "$BUILD_DIR/.docker:/root/.docker:Z" \
+            -v "$BUILD_DIR/volumes/trusted-ca:/mnt/trusted-ca:Z" \
             -v "$BUILD_DIR/scripts:/scripts:Z" \
             -v "/run/user/1001/podman/podman.sock:/workdir/podman.sock:Z" \
             --user=0 \
