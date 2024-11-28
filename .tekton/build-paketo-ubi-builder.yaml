@@ -14,25 +14,30 @@ spec:
     Build-paketo-ubi-builder task builds a ubi image of a paketo builder project using as input the builder.toml file.
     The task also produces the SBOM which is signed and added to the image
   params:
-    - name: "PLATFORM"
-      description: The VM OS type to be used to run the podman container doing the build
+    - name: BUILD_ARGS
+      description: the arguments to be passed to the pack command to build the image
+      type: array
+      default: []
+    - name: BUILDER_IMAGE
+      description: The image packaging the paketo tools and to be used to build
       type: string
-      default: "linux-mlarge/amd64"
+      default: "quay.io/redhat-user-workloads/konflux-build-pipeli-tenant/paketo-container:ea8ddb8818bb4a55546927e7674b0362dabd6342"
+    - name: CACHI2_ARTIFACT
+      description: The Trusted Artifact URI pointing to the artifact with the prefetched
+        dependencies.
+      default: ""
+      type: string
     - name: IMAGE
       description: Reference of the image that pack will produce.
       type: string
+    - name: PLATFORM
+      description: The VM OS type to be used to run the podman container doing the build
+      type: string
+      default: "linux-mlarge/amd64"
     - name: SOURCE_ARTIFACT
       description: The Trusted Artifact URI pointing to the artifact with
         the application source code.
       type: string
-    - name: "BUILDER_IMAGE"
-      description: The image packaging the paketo tools and to be used to build
-      type: string
-      default: "quay.io/redhat-user-workloads/konflux-build-pipeli-tenant/paketo-container:ea8ddb8818bb4a55546927e7674b0362dabd6342"
-    - name: "BUILD_ARGS"
-      description: the arguments to be passed to the pack command to build the image
-      type: array
-      default: []
     - name: TLSVERIFY
       description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
       type: string
@@ -75,6 +80,12 @@ spec:
       - name: "TLSVERIFY"
         value: "$(params.TLSVERIFY)"
   steps:
+      - name: use-trusted-artifact
+        image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:81c4864dae6bb11595f657be887e205262e70086a05ed16ada827fd6391926ac
+        args:
+          - use
+          - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+          - $(params.CACHI2_ARTIFACT)=/var/workdir/cachi2
       - args:
           - "$(params.BUILD_ARGS[*])"
         image: "quay.io/konflux-ci/buildah-task:latest"
@@ -234,6 +245,7 @@ spec:
           - mountPath: "/shared"
             name: "shared"
             readOnly: false
+        workingDir: /var/workdir
       - computeResources:
           limits:
             cpu: "2"
@@ -260,10 +272,10 @@ spec:
           echo "##########################################################################################"
           # syft dir:"$(cat /shared/container_path)" --output cyclonedx-json="/shared/sbom-image.json"
           syft scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
-
         volumeMounts:
           - mountPath: /shared
             name: shared
+        workingDir: /var/workdir/source
       - computeResources:
           limits:
             cpu: 200m
@@ -314,7 +326,7 @@ spec:
         volumeMounts:
           - mountPath: /shared
             name: shared
-
+        workingDir: /var/workdir
       - computeResources:
           limits:
             cpu: "4"
@@ -417,7 +429,6 @@ spec:
           echo -n "${sbom_repo}@sha256:${sbom_digest}" | tee "$(results.SBOM_BLOB_URL.path)"
           
           cat "/shared"/BASE_IMAGES_DIGESTS | tee $(results.BASE_IMAGES_DIGESTS.path)
-
         securityContext:
           capabilities:
             add:
@@ -428,3 +439,33 @@ spec:
             name: varlibcontainers
           - mountPath: /shared
             name: shared
+        workingDir: /var/workdir
+      - computeResources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        image: quay.io/konflux-ci/appstudio-utils:48c311af02858e2422d6229600e9959e496ddef1@sha256:91ddd999271f65d8ec8487b10f3dd378f81aa894e11b9af4d10639fd52bba7e8
+        name: upload-sbom
+        script: |
+          #!/bin/bash
+          set -e
+          if [ "${IMAGE_APPEND_PLATFORM}" == "true" ]; then
+            IMAGE="${IMAGE}-${PLATFORM//[^a-zA-Z0-9]/-}"
+            export IMAGE
+          fi
+          ca_bundle=/mnt/trusted-ca/ca-bundle.crt
+          if [ -f "$ca_bundle" ]; then
+            echo "INFO: Using mounted CA bundle: $ca_bundle"
+            cp -vf $ca_bundle /etc/pki/ca-trust/source/anchors
+            update-ca-trust
+          fi
+
+          cosign attach sbom --sbom sbom-cyclonedx.json --type cyclonedx "$(cat "$(results.IMAGE_REF.path)")"
+        volumeMounts:
+          - mountPath: /mnt/trusted-ca
+            name: trusted-ca
+            readOnly: true
+        workingDir: /var/workdir
