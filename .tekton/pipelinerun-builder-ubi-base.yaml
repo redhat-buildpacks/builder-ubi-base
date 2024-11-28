@@ -55,7 +55,7 @@ spec:
       - name: "pipelinerun-name"
         value: "$(context.pipelineRun.name)"
       - name: "git-url"
-        value: "$(tasks.git-clone.results.url)?rev=$(tasks.git-clone.results.commit)"
+        value: "$(tasks.clone-repository.results.url)?rev=$(tasks.clone-repository.results.commit)"
       - name: "image-url"
         value: "$(params.output-image)"
       - name: "build-task-status"
@@ -80,9 +80,9 @@ spec:
     - name: "BASE_IMAGES_DIGESTS"
       value: "$(tasks.build-container.results.BASE_IMAGES_DIGESTS)"
     - name: "CHAINS-GIT_URL"
-      value: "$(tasks.git-clone.results.url)"
+      value: "$(tasks.clone-repository.results.url)"
     - name: "CHAINS-GIT_COMMIT"
-      value: "$(tasks.git-clone.results.commit)"
+      value: "$(tasks.clone-repository.results.commit)"
     tasks:
     - name: init
       params:
