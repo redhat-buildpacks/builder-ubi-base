@@ -264,12 +264,15 @@ spec:
             add:
               - SETFCAP
         volumeMounts:
-          - mountPath: "/ssh"
-            name: "ssh"
+          - name: ssh
+            mountPath: "/ssh"
             readOnly: true
-          - mountPath: "/shared"
-            name: "shared"
+          - name: shared
+            mountPath: "/shared"
             readOnly: false
+          - name: trusted-ca
+            mountPath: /mnt/trusted-ca
+            readOnly: true
         workingDir: /var/workdir
       - computeResources:
           limits:
