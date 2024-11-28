@@ -41,6 +41,8 @@ spec:
     value: ""
   - name: path-context
     value: ""
+  - name: SOURCE_CODE_DIR
+    value: .
   pipelineSpec:
     finally:
     - name: "show-sbom"
