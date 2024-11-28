@@ -159,7 +159,7 @@ spec:
           #rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
           rsync -ra "/var/workdir/"            "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
           rsync -ra "/shared/"                 "$SSH_HOST:$BUILD_DIR/volumes/shared/"
-          rsync -ra  "/mnt/trusted-ca/"        "$SSH_HOST:$BUILD_DIR/volumes/trusted-ca/"
+          rsync -ra "/mnt/trusted-ca/"         "$SSH_HOST:$BUILD_DIR/volumes/trusted-ca/"
           rsync -ra "/tekton/results/"         "$SSH_HOST:$BUILD_DIR/results/"
           
           echo "##########################################################################################"
@@ -185,10 +185,7 @@ spec:
           cat >scripts/script-build.sh <<'REMOTESSHEOF'
           #!/bin/sh
           
-          echo "## Moving to the source directory"
-          pwd
-          ls -la
-          ls -la ..
+          cd /var/workdir
           
           echo "### Build the builder image using pack"
           for build_arg in "${BUILD_ARGS[@]}"; do
