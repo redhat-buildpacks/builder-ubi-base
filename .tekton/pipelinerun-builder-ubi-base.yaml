@@ -176,8 +176,8 @@ spec:
             value: "$(params.REPOSITORY_TO_FETCH)"
           - name: "IMAGE"
             value: "$(params.output-image)"
-          - name: TLSVERIFY
-            value: $(params.TLSVERIFY)
+          - name: "TLSVERIFY"
+            value: "$(params.TLSVERIFY)"
         steps:
         - args:
           - "$(params.BUILD_ARGS[*])"
