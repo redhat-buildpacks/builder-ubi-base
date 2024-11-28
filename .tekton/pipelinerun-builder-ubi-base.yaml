@@ -367,9 +367,6 @@ spec:
             echo "##########################################################################################"
             # syft dir:"$(cat /shared/container_path)" --output cyclonedx-json="/shared/sbom-image.json"
             syft scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
-            
-            ls -la /shared/sbom-image.json
-            ls -la /shared/sbom-source.json
 
           volumeMounts:
             - mountPath: /shared
@@ -411,13 +408,14 @@ spec:
             echo "##########################################################################################"
             python3 /scripts/create_purl_sbom.py
 
+            # TODO: How can we get for the paketo stuffs: base_images_from_dockerfile
             # echo "##########################################################################################"
             # echo "Adding base images data to sbom-cyclonedx.json"
             # echo "##########################################################################################"
             # python3 /scripts/base_images_sbom_script.py \
             #   --sbom=sbom-cyclonedx.json \
             #   --base-images-from-dockerfile=/shared/base_images_from_dockerfile \
-            #   --base-images-digests=/shared/base_images_digests
+            #   --base-images-digests=/shared/BASE_IMAGES_DIGESTS
           securityContext:
             runAsUser: 0
           volumeMounts:
@@ -509,6 +507,9 @@ spec:
               exit 1
             fi
 
+            echo "##########################################################################################"
+            echo "## Save the different results"
+            echo "##########################################################################################"
             cat "/shared"/image-digest | tee $(results.IMAGE_DIGEST.path)
             echo -n "$IMAGE" | tee $(results.IMAGE_URL.path)
             {
@@ -521,6 +522,9 @@ spec:
             sbom_digest="$(sha256sum sbom-cyclonedx.json | cut -d' ' -f1)"
             # The SBOM_BLOB_URL is created by `cosign attach sbom`.
             echo -n "${sbom_repo}@sha256:${sbom_digest}" | tee "$(results.SBOM_BLOB_URL.path)"
+            
+            cat "/shared"/BASE_IMAGES_DIGESTS | tee $(results.BASE_IMAGES_DIGESTS.path)
+
           securityContext:
             capabilities:
               add:
