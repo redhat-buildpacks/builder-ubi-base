@@ -490,7 +490,7 @@ spec:
             echo "######################################################$TLSVERIFY####################################"
             echo "Pushing to ${IMAGE%:*}:${TASKRUN_NAME}"
             echo "##########################################################################################"
-            if ! retry buildah push \
+            if ! retry buildah --storage-driver vfs push \
               --tls-verify="$TLSVERIFY" \
               "$IMAGE" \
               "docker://${IMAGE%:*}:$(context.taskRun.name)"; then
@@ -501,7 +501,7 @@ spec:
             echo "##########################################################################################"
             echo "Pushing to ${IMAGE}"
             echo "##########################################################################################"
-            if ! retry buildah push \
+            if ! retry buildah --storage-driver vfs push \
               --tls-verify="$TLSVERIFY" \
               --digestfile "/shared/image-digest" "$IMAGE" \
               "docker://$IMAGE"; then
