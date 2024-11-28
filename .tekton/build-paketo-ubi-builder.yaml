@@ -68,12 +68,12 @@ spec:
       description: "SBOM Image URL"
       type: string
   volumes:
-    - name: "ssh"
+    - name: ssh
       secret:
         secretName: "multi-platform-ssh-$(context.taskRun.name)"
-    - name: "shared"
+    - name: shared
       emptyDir: {}
-    - name: "varlibcontainers"
+    - name: varlibcontainers
       emptyDir: {}
     - configMap:
         items:
@@ -82,6 +82,8 @@ spec:
         name: $(params.caTrustConfigMapName)
         optional: true
       name: trusted-ca
+    - name: workdir
+      emptyDir: {}
   workspaces:
     - name: source
       description: Workspace containing the source code to build.
