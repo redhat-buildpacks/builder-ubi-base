@@ -196,11 +196,11 @@ spec:
         resolver: git
         params:
           - name: url
-            value: https://github.com/redhat-buildpacks/builder-ubi-base.git
+            value: https://github.com/redhat-buildpacks/fork-konflux-build-definitions
           - name: revision
-            value: main
+            value: paketo-builder
           - name: pathInRepo
-            value: .tekton/build-paketo-ubi-builder.yaml
+            value: task/build-paketo-ubi-builder/0.1/build-paketo-ubi-builder.yaml
 
     - name: build-image-index
       params:
