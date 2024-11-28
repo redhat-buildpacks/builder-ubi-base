@@ -11,7 +11,7 @@ metadata:
   labels:
     appstudio.openshift.io/application: "buildpack-remote"
     pipelines.appstudio.openshift.io/type: "build"
-    pipelines.openshift.io/strategy: "remote-build"
+    pipelines.openshift.io/strategy: "paketo-pack-build"
     appstudio.openshift.io/component: "builder-ubi-base"
     pipelines.openshift.io/used-by: "build-cloud"
     pipelines.openshift.io/runtime: "java"
