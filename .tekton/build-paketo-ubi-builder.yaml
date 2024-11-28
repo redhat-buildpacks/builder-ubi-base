@@ -439,6 +439,9 @@ spec:
             name: varlibcontainers
           - mountPath: /shared
             name: shared
+          - mountPath: /mnt/trusted-ca
+            name: trusted-ca
+            readOnly: true
         workingDir: /var/workdir
       - computeResources:
           limits:
