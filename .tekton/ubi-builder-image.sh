@@ -32,7 +32,6 @@ export PORT_FORWARD=""
 export PODMAN_PORT_FORWARD=""
 
 echo "### rsync folders from pod to VM ..."
-# rsync -ra /var/workdir/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra $(workspaces.source.path)/ "$SSH_HOST:$BUILD_DIR/volumes/workdir/"
 rsync -ra "/shared/"                 "$SSH_HOST:$BUILD_DIR/volumes/shared/"
 rsync -ra "/tekton/results/"         "$SSH_HOST:$BUILD_DIR/results/"
@@ -101,7 +100,7 @@ podman push "${IMAGE}" "oci:$BUILD_DIR/volumes/shared/konflux-final-image:$IMAGE
 echo "###########################################################"
 
 echo "###########################################################"
-echo "### Export: IMAGE_URL, IMAGE_DIGEST & BASE_IMAGES_DIGESTS"
+echo "### Export: IMAGE_URL"
 echo "###########################################################"
 echo -n "$IMAGE" > $BUILD_DIR/volumes/shared/IMAGE_URL
 REMOTESSHEOF
@@ -116,7 +115,6 @@ rsync -ra "$HOME/.docker/" "$SSH_HOST:$BUILD_DIR/.docker/"
 echo "### Setup VM environment: podman, etc within the VM ..."
 ssh $SSH_ARGS "$SSH_HOST" scripts/script-setup.sh
 
-# -v "$BUILD_DIR/volumes/workdir:/var/workdir:Z" => volume used with oci-ta
 # Adding security-opt to by pass: dial unix /workdir/podman.sock: connect: permission denied
 ssh $SSH_ARGS "$SSH_HOST" $PORT_FORWARD podman run $PODMAN_PORT_FORWARD \
   -e REPOSITORY_TO_FETCH=${REPOSITORY_TO_FETCH} \
@@ -141,56 +139,6 @@ ssh $SSH_ARGS "$SSH_HOST" \
   scripts/script-post-build.sh
 
 echo "### rsync folders from VM to pod"
-# rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "/var/workdir/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/workdir/" "$(workspaces.source.path)/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/volumes/shared/"  "/shared/"
 rsync -ra "$SSH_HOST:$BUILD_DIR/results/"         "/tekton/results/"
-
-echo "### List files: /shared ####"
-ls -la /shared
-
-echo "########################################"
-echo "### Running syft on the image filesystem"
-echo "########################################"
-ls -la /usr/bin
-/usr/bin/syft -v scan oci-dir:/shared/konflux-final-image -o cyclonedx-json > /shared/sbom-image.json
-
-echo "### Show the content of the sbom file"
-cat /shared/sbom-image.json # | jq -r '.'
-
-{
-  echo -n "${IMAGE}@"
-  cat "/shared/IMAGE_REF"
-} > /shared/IMAGE_REF
-echo "Image reference: $(cat /shared/IMAGE_REF)"
-
-echo "########################################"
-echo "### Add the SBOM to the image"
-echo "########################################"
-/usr/bin/cosign attach sbom --sbom /shared/sbom-image.json --type cyclonedx $(cat /shared/IMAGE_REF)
-
-echo "##########################################################################################"
-echo "### Step 4 :: Export results to Tekton"
-echo "##########################################################################################"
-
-echo "### Export the tekton results"
-echo "### IMAGE_URL: $(cat $(workspaces.source.path)/IMAGE_URL)"
-#cat /var/workdir/IMAGE_URL > "$(results.IMAGE_URL.path)"
-cat /shared/IMAGE_URL > "$(results.IMAGE_URL.path)"
-
-echo "### IMAGE_DIGEST: $(cat $(workspaces.source.path)/IMAGE_DIGEST)"
-#cat /var/workdir/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
-cat /shared/IMAGE_DIGEST > "$(results.IMAGE_DIGEST.path)"
-
-echo "### IMAGE_REF: $(cat $(workspaces.source.path)/IMAGE_REF)"
-#cat /var/workdir/IMAGE_REF > "$(results.IMAGE_REF.path)"
-cat /shared/IMAGE_REF > "$(results.IMAGE_REF.path)"
-
-echo "### BASE_IMAGES_DIGESTS: $(cat $(workspaces.source.path)/BASE_IMAGES_DIGESTS)"
-#cat /var/workdir/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
-cat /shared/BASE_IMAGES_DIGESTS > "$(results.BASE_IMAGES_DIGESTS.path)"
-
-SBOM_REPO="${IMAGE%:*}"
-SBOM_DIGEST="$(sha256sum /shared/sbom-image.json | cut -d' ' -f1)"
-echo "### SBOM_BLOB_URL: ${SBOM_REPO}@sha256:${SBOM_DIGEST}"
-echo -n "${SBOM_REPO}@sha256:${SBOM_DIGEST}" | tee "$(results.SBOM_BLOB_URL.path)"
