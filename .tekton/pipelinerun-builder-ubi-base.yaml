@@ -84,23 +84,23 @@ spec:
     - name: "CHAINS-GIT_COMMIT"
       value: "$(tasks.git-clone.results.commit)"
     tasks:
-    - name: "init"
+    - name: init
       params:
-      - name: "image-url"
-        value: "$(params.output-image)"
-      - name: "rebuild"
-        value: "$(params.rebuild)"
-      - name: "skip-checks"
-        value: "$(params.skip-checks)"
+        - name: image-url
+          value: $(params.output-image)
+        - name: rebuild
+          value: $(params.rebuild)
+        - name: skip-checks
+          value: $(params.skip-checks)
       taskRef:
         params:
-        - name: "bundle"
-          value: "quay.io/konflux-ci/tekton-catalog/task-init:0.2"
-        - name: "name"
-          value: "init"
-        - name: "kind"
-          value: "task"
-        resolver: "bundles"
+          - name: name
+            value: init
+          - name: bundle
+            value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:0523b51c28375a3f222da91690e22eff11888ebc98a0c73c468af44762265c69
+          - name: kind
+            value: task
+        resolver: bundles
     - name: "git-clone"
       params:
       - name: "url"
