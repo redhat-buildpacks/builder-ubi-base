@@ -1,4 +1,4 @@
-## Commands to be executed to generate the pipelineRun - test1
+## Commands to be executed to generate the pipelineRun - test2
 
 - Install and build the Quarkus application: 
 ```bash
