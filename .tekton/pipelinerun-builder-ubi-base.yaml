@@ -177,8 +177,6 @@ spec:
       params:
       - name: PLATFORM
         value: "linux-mlarge/amd64"
-      - name: BUILDER_IMAGE
-        value: "quay.io/redhat-user-workloads/konflux-build-pipeli-tenant/paketo-container:ea8ddb8818bb4a55546927e7674b0362dabd6342"
       - name: REPOSITORY_TO_FETCH
         value: "https://github.com/redhat-buildpacks/builder-ubi-base"
       - name: BUILD_ARGS
