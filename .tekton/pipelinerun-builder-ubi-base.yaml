@@ -196,7 +196,7 @@ spec:
           - name: url
             value: https://github.com/redhat-buildpacks/fork-konflux-build-definitions
           - name: revision
-            value: paketo-builder
+            value: new-paketo-builder
           - name: pathInRepo
             value: task/build-paketo-builder-oci-ta/0.1/build-paketo-builder-oci-ta.yaml
 
