@@ -410,8 +410,8 @@ spec:
           values:
             - "false"
 
-  timeouts:
-    pipeline: "600000000000ns"
+  #timeouts:
+  #  pipeline: "600000000000ns"
   workspaces:
   - name: "workspace"
     volumeClaimTemplate:
