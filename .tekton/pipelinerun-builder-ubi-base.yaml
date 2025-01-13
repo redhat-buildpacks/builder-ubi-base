@@ -9,7 +9,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     build.appstudio.openshift.io/repo: "https://github.com/redhat-buildpacks/builder-ubi-base?rev={{revision}}"
   labels:
-    appstudio.openshift.io/application: "buildpack-remote"
+    appstudio.openshift.io/application: "buildpacks"
     pipelines.appstudio.openshift.io/type: "build"
     pipelines.openshift.io/strategy: "paketo-pack-build"
     appstudio.openshift.io/component: "builder-ubi-base"
@@ -32,7 +32,7 @@ spec:
   - name: prefetch-input
     value: ""
   - name: output-image
-    value: "quay.io/redhat-user-workloads/cmoullia-tenant/buildpack-remote/builder-ubi-base:{{revision}}"
+    value: "quay.io/redhat-user-workloads/cmoullia-tenant/buildpacks/builder-ubi-base:{{revision}}"
   - name: TLSVERIFY
     value: "true"
   - name: cachi2-log-level
