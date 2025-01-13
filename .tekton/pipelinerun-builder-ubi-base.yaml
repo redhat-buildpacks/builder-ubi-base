@@ -32,7 +32,7 @@ spec:
   - name: prefetch-input
     value: ""
   - name: output-image
-    value: "quay.io/redhat-user-workloads/cmoullia-tenant/buildpacks/builder-ubi-base:{{revision}}"
+    value: "quay.io/redhat-user-workloads/cmoullia-tenant/builder-ubi-base:on-pr-{{revision}}"
   - name: TLSVERIFY
     value: "true"
   - name: cachi2-log-level
