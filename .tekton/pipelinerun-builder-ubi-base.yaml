@@ -37,8 +37,10 @@ spec:
     value: "true"
   - name: cachi2-log-level
     value: info
+  # URL of the Dockerfile used by the project "ubi-base" to build the base or build image that pack is using here to create the builder image
+  # TODO: Enhance the task in order to fetch the URL using the tag of the image defined within the builder toml file under: [stack]/build-image
   - name: dockerfile
-    value: ""
+    value: "https://raw.githubusercontent.com/paketo-community/ubi-base-stack/refs/tags/v0.0.90/stacks/stack/build.Dockerfile"
   - name: path-context
     value: ""
   - name: SOURCE_CODE_DIR
