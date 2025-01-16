@@ -16,5 +16,3 @@ builder documentation](https://paketo.io/docs/builders/).  To learn about the
 stack included in this builder, visit the [Paketo stack
 documentation](https://paketo.io/docs/stacks/) and the [Paketo ubi Base Stack
 repo](https://github.com/paketo-community/ubi-base-stack).
-
-Trigger 1
