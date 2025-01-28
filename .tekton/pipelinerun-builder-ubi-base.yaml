@@ -31,6 +31,8 @@ spec:
     value: "false"
   - name: prefetch-input
     value: ""
+  - name: hermetic
+    value: "true"
   - name: output-image
     value: "quay.io/redhat-user-workloads/cmoullia-tenant/builder-ubi-base:on-pr-{{revision}}"
   - name: TLSVERIFY
