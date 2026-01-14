@@ -1,6 +1,6 @@
 module github.com/paketo-community/builder-ubi-base
 
-go 1.23.3
+go 1.24.0
 
 require (
 	github.com/onsi/gomega v1.36.0
@@ -65,7 +65,7 @@ require (
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230731190214-cbb8c96f2d6d // indirect
